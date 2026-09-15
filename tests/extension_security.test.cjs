@@ -3,6 +3,14 @@ const assert = require("node:assert/strict");
 const vm = require("node:vm");
 const fs = require("node:fs");
 const path = require("node:path");
+const crypto = require("node:crypto");
+
+test("manifest pins the same extension ID on every computer", () => {
+    const manifest = JSON.parse(fs.readFileSync(path.join(__dirname, "../extension/manifest.json"), "utf8"));
+    const digest = crypto.createHash("sha256").update(Buffer.from(manifest.key, "base64")).digest().subarray(0, 16);
+    const extensionId = [...digest].flatMap(byte => [byte >> 4, byte & 15]).map(value => String.fromCharCode(97 + value)).join("");
+    assert.equal(extensionId, "knckclcnbppcnhinmehnpajloflmjcgm");
+});
 
 test("extension sends session credentials with bounded, non-redirecting requests", async () => {
     let request;

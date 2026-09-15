@@ -1,6 +1,20 @@
 import json
 
-from backend.local_extension import detect_unpacked_extension_id
+from backend.local_extension import detect_unpacked_extension_id, extension_id_from_manifest
+
+
+def test_manifest_key_provides_a_portable_extension_id(tmp_path):
+    root = tmp_path / "project"
+    extension = root / "extension"
+    extension.mkdir(parents=True)
+    (extension / "manifest.json").write_text(
+        json.dumps({"key": "cG9ydGFibGUtcHVibGljLWtleQ=="}),
+        encoding="utf-8",
+    )
+    extension_id = extension_id_from_manifest(root)
+    assert len(extension_id) == 32
+    assert set(extension_id) <= set("abcdefghijklmnop")
+    assert detect_unpacked_extension_id(root, tmp_path / "missing") == extension_id
 
 
 def test_detects_only_extension_installed_from_current_project(tmp_path):

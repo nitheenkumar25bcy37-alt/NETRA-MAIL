@@ -19,9 +19,9 @@ services:
       - key: NETRA_PUBLIC_ORIGIN
         sync: false
       - key: NETRA_EXTENSION_ID
-        value: pnliejhaiikopfliaodpllcbpdopgpbc
+        value: knckclcnbppcnhinmehnpajloflmjcgm
       - key: NETRA_ALLOWED_ORIGINS
-        value: chrome-extension://pnliejhaiikopfliaodpllcbpdopgpbc
+        value: chrome-extension://knckclcnbppcnhinmehnpajloflmjcgm
       - key: NETRA_REQUIRE_API_AUTH
         value: "true"
       - key: NETRA_API_IDENTITIES

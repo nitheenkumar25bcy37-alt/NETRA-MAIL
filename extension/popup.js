@@ -137,8 +137,24 @@ analyzeButton.addEventListener("click", async () => {
     result.textContent = "Analyzing the currently open email…";
     analyzeButton.disabled = true;
     try {
+        const settings = await chrome.storage.local.get("netraProtectionEnabled");
+        if (settings.netraProtectionEnabled !== true) {
+            throw new Error("Turn on Email Protection, then select Analyze current email.");
+        }
         const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
-        const response = await chrome.tabs.sendMessage(tab.id, {type: "NETRA_ANALYZE_CURRENT_EMAIL"});
+        if (!tab || !Number.isInteger(tab.id) || !tab.url ||
+            new URL(tab.url).origin !== "https://mail.google.com") {
+            throw new Error("Open an email in Gmail, then open NETRA and try again.");
+        }
+        let response;
+        try {
+            response = await chrome.tabs.sendMessage(tab.id, {type: "NETRA_ANALYZE_CURRENT_EMAIL"});
+        } catch (error) {
+            if (/receiving end does not exist|could not establish connection|message port closed|message channel closed|extension context invalidated/i.test(error.message || "")) {
+                throw new Error("Gmail needs a refresh after the extension update. Refresh the Gmail tab, reopen NETRA, and analyze again.");
+            }
+            throw error;
+        }
         if (!response || !response.success) {
             throw new Error((response && response.error) || "Open a Gmail email, enable protection, and try again.");
         }
