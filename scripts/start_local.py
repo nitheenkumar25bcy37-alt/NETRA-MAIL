@@ -1,36 +1,16 @@
 """Launch local NETRA with optional, memory-only reputation key entry."""
 import argparse
 import getpass
-import json
 import os
-import re
 import subprocess
 import sys
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
-def detect_unpacked_extension_id(root, user_data=None):
-    """Find Chrome's ID only when its unpacked path exactly matches this project."""
-    expected = (Path(root) / "extension").resolve()
-    base = Path(user_data) if user_data else Path(os.getenv("LOCALAPPDATA", "")) / "Google/Chrome/User Data"
-    if not base.is_dir():
-        return ""
-    matches = []
-    for preferences in base.glob("*/Secure Preferences"):
-        try:
-            settings = json.loads(preferences.read_text(encoding="utf-8")).get("extensions", {}).get("settings", {})
-        except (OSError, ValueError, TypeError):
-            continue
-        for extension_id, record in settings.items():
-            if not re.fullmatch(r"[a-p]{32}", extension_id) or not isinstance(record, dict):
-                continue
-            try:
-                installed_path = Path(str(record.get("path", ""))).resolve()
-            except (OSError, ValueError):
-                continue
-            if str(installed_path).casefold() == str(expected).casefold():
-                matches.append(extension_id)
-    return sorted(set(matches))[0] if len(set(matches)) == 1 else ""
+from backend.local_extension import detect_unpacked_extension_id
 
 
 def main():
@@ -39,7 +19,7 @@ def main():
     parser.add_argument("--expand-urls", action="store_true", help="Allow the isolated worker to contact public URL destinations")
     args = parser.parse_args()
     env = dict(os.environ)
-    root = Path(__file__).resolve().parents[1]
+    root = ROOT
     if not env.get("NETRA_EXTENSION_ID"):
         extension_id = detect_unpacked_extension_id(root)
         if extension_id:

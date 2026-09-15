@@ -1,6 +1,6 @@
 import json
 
-from scripts.start_local import detect_unpacked_extension_id
+from backend.local_extension import detect_unpacked_extension_id
 
 
 def test_detects_only_extension_installed_from_current_project(tmp_path):

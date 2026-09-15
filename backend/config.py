@@ -231,6 +231,14 @@ NETRA_EXTENSION_ID = os.getenv(
     "",
 ).strip()
 
+if (
+    not NETRA_EXTENSION_ID
+    and os.getenv("NETRA_DEPLOYMENT_MODE", "local").strip().lower() != "hosted"
+):
+    from backend.local_extension import detect_unpacked_extension_id
+
+    NETRA_EXTENSION_ID = detect_unpacked_extension_id(BASE_DIR.parent)
+
 NETRA_EXTENSION_ORIGIN = (
     f"chrome-extension://{NETRA_EXTENSION_ID}"
     if NETRA_EXTENSION_ID
