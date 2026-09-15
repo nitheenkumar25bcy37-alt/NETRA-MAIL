@@ -193,6 +193,48 @@ CUES = {
     },
 }
 
+# Canonical Unicode aliases. Earlier copies of the source passed some native
+# strings through a legacy Windows encoding, which preserved script detection
+# but prevented the phishing cue dictionaries from matching real messages.
+_NATIVE_CUE_ALIASES = {
+    "hin": {
+        "urgency": ("तुरंत", "तत्काल", "अभी", "जल्दी", "शीघ्र"),
+        "financial_fraud": ("बैंक", "खाता", "पैसे", "भुगतान", "लेनदेन", "क्रेडिट", "डेबिट", "केवाईसी"),
+        "credential_harvesting": ("पासवर्ड", "लॉगिन", "सत्यापित", "सत्यापन", "ओटीपी"),
+        "social_engineering": ("क्लिक करें", "यहाँ क्लिक", "निलंबित", "जानकारी दें", "तुरंत कार्रवाई"),
+    },
+    "tam": {
+        "urgency": ("அவசரம்", "உடனடியாக", "இப்போதே", "விரைவாக", "உடனே"),
+        "financial_fraud": ("வங்கி", "கணக்கு", "பணம்", "பரிவர்த்தனை", "கட்டணம்", "கேஒய்சி"),
+        "credential_harvesting": ("கடவுச்சொல்", "உள்நுழைவு", "சரிபார்க்கவும்", "ஓடிபி"),
+        "social_engineering": ("கிளிக் செய்யவும்", "இங்கே கிளிக்", "முடக்கப்படும்", "தகவலை வழங்கவும்"),
+    },
+    "tel": {
+        "urgency": ("అత్యవసరం", "వెంటనే", "తక్షణమే", "ఇప్పుడే", "త్వరగా"),
+        "financial_fraud": ("బ్యాంక్", "ఖాతా", "డబ్బు", "చెల్లింపు", "లావాదేవీ", "కేవైసి"),
+        "credential_harvesting": ("పాస్‌వర్డ్", "లాగిన్", "ధృవీకరించండి", "ఓటీపీ"),
+        "social_engineering": ("క్లిక్ చేయండి", "ఇక్కడ క్లిక్", "ఖాతా నిలిపివేయబడుతుంది", "సమాచారం ఇవ్వండి"),
+    },
+    "kan": {
+        "urgency": ("ತುರ್ತು", "ತಕ್ಷಣ", "ಈಗಲೇ", "ಶೀಘ್ರವಾಗಿ"),
+        "financial_fraud": ("ಬ್ಯಾಂಕ್", "ಖಾತೆ", "ಹಣ", "ಪಾವತಿ", "ವಹಿವಾಟು", "ಕೆವೈಸಿ"),
+        "credential_harvesting": ("ಪಾಸ್‌ವರ್ಡ್", "ಲಾಗಿನ್", "ಪರಿಶೀಲಿಸಿ", "ಒಟಿಪಿ"),
+        "social_engineering": ("ಕ್ಲಿಕ್ ಮಾಡಿ", "ಇಲ್ಲಿ ಕ್ಲಿಕ್", "ಖಾತೆ ಸ್ಥಗಿತಗೊಳ್ಳುತ್ತದೆ", "ಮಾಹಿತಿ ನೀಡಿ"),
+    },
+    "mal": {
+        "urgency": ("അടിയന്തിരം", "ഉടൻ", "ഉടനടി", "ഇപ്പോൾ തന്നെ", "വേഗത്തിൽ"),
+        "financial_fraud": ("ബാങ്ക്", "അക്കൗണ്ട്", "പണം", "പണമിടപാട്", "പേയ്മെന്റ്", "കെവൈസി"),
+        "credential_harvesting": ("പാസ്‌വേഡ്", "പാസ്‌വേഡ്", "ലോഗിൻ", "സ്ഥിരീകരിക്കുക", "ഒടിപി"),
+        "social_engineering": ("ക്ലിക്ക് ചെയ്യുക", "ഇവിടെ ക്ലിക്ക്", "സസ്പെൻഡ്", "വിവരങ്ങൾ നൽകുക"),
+    },
+}
+
+for _language_code, _categories in _NATIVE_CUE_ALIASES.items():
+    for _category, _aliases in _categories.items():
+        CUES[_language_code][_category] = tuple(
+            dict.fromkeys((*CUES[_language_code][_category], *_aliases))
+        )
+
 
 # ============================================================
 # ROMANIZED / TRANSLITERATED LANGUAGE CUES
