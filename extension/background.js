@@ -1,8 +1,3 @@
-// ============================================================
-// NETRA-MAIL SHIELD
-// Background Service Worker
-// ============================================================
-
 importScripts("connection.js");
 
 async function apiBaseURL() {
