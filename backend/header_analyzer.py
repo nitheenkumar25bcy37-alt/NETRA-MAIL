@@ -18,11 +18,11 @@ class HeaderForensicAnalyzer:
         auth = parsed_email.get("authentication_headers", {}) or {}
         meta = parsed_email.get("metadata", {}) or {}
         chain = parsed_email.get("network_chain", []) or []
-        auth_text = " ".join(str(value) for values in auth.values() for value in (values if isinstance(values, list) else [values])).lower()
+        auth_text = " ".join(str(value) for key, values in auth.items() if key in {"authentication_results", "received_spf", "spf", "dmarc"} for value in (values if isinstance(values, list) else [values])).lower()
         statuses = {name: cls._status(name, auth_text) for name in ("spf", "dkim", "dmarc")}
         domains = {name: cls._domain(meta.get(name, "")) for name in ("from", "reply_to", "return_path", "sender")}
         domains["message_id"] = cls._message_id_domain(meta.get("message_id", ""))
-        alignment = {"from_domain": domains["from"], "reply_to_domain": domains["reply_to"], "return_path_domain": domains["return_path"], "sender_domain": domains["sender"], "message_id_domain": domains["message_id"], "spf_aligned": cls._aligned(domains["from"], cls._auth_domain(auth_text, "smtp.mailfrom")), "dkim_aligned": cls._aligned(domains["from"], cls._auth_domain(auth_text, "header.d")), "dmarc_aligned": cls._aligned(domains["from"], cls._auth_domain(auth_text, "dmarc"))}
+        alignment = {"from_domain": domains["from"], "reply_to_domain": domains["reply_to"], "return_path_domain": domains["return_path"], "sender_domain": domains["sender"], "message_id_domain": domains["message_id"], "spf_aligned": cls._aligned(domains["from"], cls._auth_domain(auth_text, "smtp.mailfrom")), "dkim_aligned": cls._aligned(domains["from"], cls._auth_domain(auth_text, "header.d")), "dmarc_aligned": cls._aligned(domains["from"], cls._auth_domain(auth_text, "header.from"))}
         findings: List[Dict[str, Any]] = []
 
         if domains["from"] and domains["reply_to"] and not cls._aligned(domains["from"], domains["reply_to"]):
@@ -59,7 +59,7 @@ class HeaderForensicAnalyzer:
                 findings.append(cls._finding("received_timestamp_anomaly", "low", 0.78, "Received header timestamp is missing or malformed", "The relay timestamp could not be parsed reliably.", {"hop": hop.get("hop_index"), "raw_header": hop.get("raw_header", "")}))
             for ip, classification in zip(hop.get("extracted_ips", []), hop.get("ip_classifications", [])):
                 if classification in {"private", "reserved", "loopback"}:
-                    findings.append(cls._finding("non_public_origin_ip", "medium", 0.9, "Non-public IP appears in relay evidence", "Private, reserved, or loopback addresses cannot establish a public origin.", {"ip": ip, "classification": classification, "hop": hop.get("hop_index")}, ["Private relay addresses are common inside legitimate mail systems."]))
+                    findings.append(cls._finding("non_public_origin_ip", "info", 0.9, "Non-public IP appears in relay evidence", "Private, reserved, or loopback addresses cannot establish a public origin.", {"ip": ip, "classification": classification, "hop": hop.get("hop_index")}, ["Private relay addresses are common inside legitimate mail systems."]))
         timestamps = [cls._timestamp(hop.get("timestamp")) for hop in chain]
         valid = [stamp for stamp in timestamps if stamp]
         if len(valid) > 1 and any(left < right for left, right in zip(valid, valid[1:])):
@@ -88,7 +88,8 @@ class HeaderForensicAnalyzer:
         if not matches:
             return "none"
         value = matches[0]
-        return "pass" if value in {"bestguesspass", "pass"} else "fail" if value in {"fail", "softfail", "temperror", "permerror"} else value
+        # Preserve errors and soft failures: a DNS outage is not proof of forgery.
+        return value
 
     @staticmethod
     def _auth_domain(text: str, key: str) -> str:

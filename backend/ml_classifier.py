@@ -1,5 +1,8 @@
 import csv
 import os
+import hashlib
+import io
+from threading import RLock
 from pathlib import Path
 from typing import Dict, List
 
@@ -7,11 +10,16 @@ import joblib
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
+from backend.config import MODEL_PATH as CONFIGURED_MODEL_PATH
 
 
 class LocalMLClassifier:
-    MODEL_PATH = Path(os.getenv("NETRA_MODEL_PATH", "data/phishing_model.joblib"))
-    DATASET_PATH = Path("data/training_data.csv")
+    BASE_DIR = Path(__file__).resolve().parent
+    MODEL_PATH = Path(CONFIGURED_MODEL_PATH)
+    DATASET_PATH = Path(os.getenv("NETRA_EMAIL_DATASET_PATH", str(BASE_DIR / "data" / "training_data.csv")))
+    _cache_key = None
+    _cached_model = None
+    _lock = RLock()
 
     BOOTSTRAP = [
         ("Meeting moved to 3 PM tomorrow. See you then.", "LEGITIMATE"),
@@ -32,8 +40,11 @@ class LocalMLClassifier:
     def _dataset(cls):
         if cls.DATASET_PATH.exists():
             rows = []
-            with cls.DATASET_PATH.open("r", encoding="utf-8", newline="") as f:
-                for row in csv.DictReader(f):
+            with cls.DATASET_PATH.open("r", encoding="utf-8-sig", newline="") as f:
+                reader = csv.DictReader(f)
+                if not {"text", "label"}.issubset(reader.fieldnames or []):
+                    raise ValueError("Email training data requires text,label columns; URL datasets are not compatible.")
+                for row in reader:
                     text = (row.get("text") or "").strip()
                     label = (row.get("label") or "").strip().upper()
                     if text and label in {"PHISHING", "LEGITIMATE"}:
@@ -60,11 +71,27 @@ class LocalMLClassifier:
     @classmethod
     def _load(cls):
         if not cls.MODEL_PATH.exists():
-            return cls.train()
-        try:
-            return joblib.load(cls.MODEL_PATH)
-        except Exception:
-            return cls.train()
+            raise RuntimeError("Email model is unavailable; train and provision an evaluated model explicitly.")
+        expected = os.getenv("NETRA_MODEL_SHA256", "").lower().strip()
+        with cls._lock:
+            stat = cls.MODEL_PATH.stat()
+            key = (str(cls.MODEL_PATH.resolve()), stat.st_mtime_ns, stat.st_size, expected)
+            if key == cls._cache_key and cls._cached_model is not None:
+                return cls._cached_model
+            if stat.st_size > 64 * 1024 * 1024:
+                raise RuntimeError("Email model artifact exceeds the size limit.")
+            artifact = cls.MODEL_PATH.read_bytes()
+            if expected and hashlib.sha256(artifact).hexdigest() != expected:
+                raise RuntimeError("Email model integrity verification failed.")
+            try:
+                # Deserialize exactly the bytes that were hashed.
+                model = joblib.load(io.BytesIO(artifact))
+                if set(model.classes_) != {"PHISHING", "LEGITIMATE"}:
+                    raise ValueError("Unexpected email model labels")
+            except Exception as exc:
+                raise RuntimeError("Email model could not be loaded; explicit retraining is required.") from exc
+            cls._cache_key, cls._cached_model = key, model
+            return model
 
     @classmethod
     def predict(cls, email_text: str) -> Dict:
@@ -81,5 +108,6 @@ class LocalMLClassifier:
             "phishing_probability": round(phishing_probability, 4),
             "confidence": round(max(probabilities) * 100, 2),
             "model": "TF-IDF + Logistic Regression",
-            "training_source": "data/training_data.csv" if cls.DATASET_PATH.exists() else "bootstrap fallback",
+            "training_source": "unverified model artifact provenance",
+            "limitations": ["Model probabilities are not calibrated safety guarantees.", "Independent end-to-end evaluation is required."],
         }

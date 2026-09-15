@@ -5,6 +5,7 @@ import io
 import ipaddress
 import os
 import re
+import time
 import zipfile
 from email import policy
 from email.parser import BytesParser
@@ -519,6 +520,8 @@ class ForensicEmailParser:
 
     def _extract_attachments(self, msg: Any) -> List[Dict[str, Any]]:
         attachments: List[Dict[str, Any]] = []
+        inspection_deadline = time.monotonic() + 60
+        inspections = 0
 
         for part in msg.walk():
             if part.is_multipart():
@@ -567,44 +570,16 @@ class ForensicEmailParser:
 
                 continue
 
-            archive_members: List[Dict[str, Any]] = []
-
-            if (
-                part.get_content_type() == "application/zip"
-                or str(filename or "").lower().endswith(".zip")
-            ):
-                try:
-                    with zipfile.ZipFile(io.BytesIO(payload)) as archive:
-                        infos = archive.infolist()
-
-                        if len(infos) > self.MAX_ARCHIVE_MEMBERS:
-                            raise ValueError(
-                                "Archive contains too many members"
-                            )
-
-                        for item in infos:
-                            archive_members.append(
-                                {
-                                    "filename": item.filename[:1024],
-                                    "is_directory": item.is_dir(),
-                                    "encrypted": bool(item.flag_bits & 0x1),
-                                    "size_bytes": item.file_size,
-                                }
-                            )
-
-                except (OSError, ValueError, zipfile.BadZipFile):
-                    archive_members = []
-
-            embedded_urls: List[str] = []
-
-            if part.get_content_type() in {
-                "text/html",
-                "text/plain",
-                "application/javascript",
-            }:
-                embedded_urls = self._extract_urls(
-                    payload.decode("utf-8", errors="ignore")
-                )
+            from backend.inspection_client import inspect_attachment
+            remaining = inspection_deadline - time.monotonic()
+            if inspections >= 4 or remaining < 1:
+                inspection = {"available": False, "error": "message_inspection_budget_exhausted"}
+            else:
+                inspections += 1
+                inspection = inspect_attachment(payload, filename or "inline-resource", part.get_content_type(), timeout=remaining)
+            archive_members = inspection.get("archive_members", [])
+            embedded_urls = inspection.get("embedded_urls", [])
+            image_analysis = inspection.get("image_analysis", {})
 
             attachments.append(
                 {
@@ -619,7 +594,11 @@ class ForensicEmailParser:
                     "content_prefix_hex": payload[:32].hex(),
                     "embedded_urls": embedded_urls,
                     "archive_members": archive_members,
-                    "analysis_skipped": False,
+                    "analysis_skipped": not inspection.get("available", False),
+                    "image_analysis": image_analysis,
+                    "static_analysis": inspection.get("static_analysis"),
+                    "inspection_status": "complete" if inspection.get("available") else "unavailable",
+                    "skip_reason": inspection.get("error", ""),
                 }
             )
 

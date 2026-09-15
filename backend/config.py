@@ -22,7 +22,7 @@ DATABASE_PATH = os.getenv(
 
 MODEL_PATH = os.getenv(
     "NETRA_MODEL_PATH",
-    str(DATA_DIR / "phishing_model.joblib"),
+    str(BASE_DIR.parent / "data" / "phishing_model.joblib"),
 )
 
 
@@ -228,7 +228,7 @@ AI_ENABLED = _env_bool(
 
 NETRA_EXTENSION_ID = os.getenv(
     "NETRA_EXTENSION_ID",
-    "cnnigkpijjkcdepidabddkbabgphkigl",
+    "",
 ).strip()
 
 NETRA_EXTENSION_ORIGIN = (
@@ -260,7 +260,7 @@ if NETRA_EXTENSION_ORIGIN:
 # Application metadata
 # ---------------------------------------------------------------------------
 
-APP_VERSION = "3.0.0"
+APP_VERSION = "4.4.0"
 
 
 # ---------------------------------------------------------------------------
@@ -276,3 +276,9 @@ EVIDENCE_STORAGE_DIR.mkdir(
     parents=True,
     exist_ok=True,
 )
+
+
+# Networked deployments must enable this and inject the secret via a secret
+# manager. Local demonstrations retain their frictionless default.
+API_AUTH_REQUIRED = _env_bool("NETRA_REQUIRE_API_AUTH", False)
+API_ACCESS_KEY = os.getenv("NETRA_API_ACCESS_KEY", "").strip()

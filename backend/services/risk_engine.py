@@ -36,12 +36,20 @@ class RiskEngine:
             contributions.append({"rule": "multi_signal_context", "points": 10, "reason": "Multiple independent social-engineering categories are present."})
 
         score = min(100, round(score))
-        labels = {str(f.get("category", "")).lower() for f in findings}
-        if "attachment" in labels and any(f.get("severity") in {"high", "critical"} for f in findings):
+        # Explicit file-handling policy: executable and active-content delivery
+        # requires review even without social-engineering text.
+        for finding in findings:
+            if str(finding.get("rule", "")).startswith("attachment_static_"):
+                score = max(score, {"critical": 75, "high": 50, "medium": 25}.get(finding.get("severity"), 0))
+        actionable = [f for f in findings if f.get("severity", "info").lower() != "info"]
+        labels = {str(f.get("category", "")).lower() for f in actionable}
+        strong = [f for f in actionable if f.get("severity", "info").lower() in {"medium", "high", "critical"}]
+        strong_labels = {str(f.get("category", "")).lower() for f in strong}
+        if any(str(f.get("category", "")).lower() == "attachment" and f.get("severity") in {"high", "critical"} for f in actionable):
             classification = "Malware delivery"
-        elif "bec" in labels or {"text", "sender identity"}.issubset(labels) and "financial_fraud" in active:
+        elif "bec" in strong_labels or {"text", "sender identity"}.issubset(strong_labels) and "financial_fraud" in active:
             classification = "Business Email Compromise"
-        elif "url" in labels or "authentication" in labels:
+        elif "url" in strong_labels or "authentication" in strong_labels:
             classification = "Credential phishing" if "credential_harvesting" in active else "Phishing"
         elif score >= 35:
             classification = "Suspicious but inconclusive"

@@ -36,7 +36,7 @@ function loadProtectionState() {
             }
 
 
-            scheduleScan();
+            // Analysis is explicitly initiated by the user from the popup.
         }
     );
 }
@@ -73,7 +73,7 @@ chrome.storage.onChanged.addListener(
 
         lastEmailKey = "";
 
-        scheduleScan();
+        // Do not automatically extract email content after a preference change.
     }
 );
 
@@ -85,64 +85,8 @@ chrome.storage.onChanged.addListener(
 loadProtectionState();
 
 
-// ============================================================
-// MUTATION OBSERVER
-// ============================================================
-
-const observer =
-    new MutationObserver(() => {
-
-        if (!protectionEnabled) {
-            return;
-        }
-
-        scheduleScan();
-    });
-
-
-function startObserver() {
-
-    if (!document.body) {
-
-        setTimeout(
-            startObserver,
-            500
-        );
-
-        return;
-    }
-
-
-    observer.observe(
-        document.body,
-        {
-            childList: true,
-            subtree: true
-        }
-    );
-}
-
-
-startObserver();
-
-
-// ============================================================
-// DEBOUNCE
-// ============================================================
-
-function scheduleScan() {
-
-    clearTimeout(scanTimer);
-
-
-    scanTimer =
-        setTimeout(
-            () => {
-                scanCurrentEmail();
-            },
-            700
-        );
-}
+// Email contents are accessed only after an explicit popup action. This is a
+// privacy control: Gmail DOM changes alone never trigger data transmission.
 
 
 // ============================================================
@@ -185,7 +129,7 @@ function findSubjectElement() {
 // SENDER
 // ============================================================
 
-function findSenderElement() {
+function findSenderElement(root) {
 
     const selectors = [
         "span.gD[email]",
@@ -197,7 +141,7 @@ function findSenderElement() {
     for (const selector of selectors) {
 
         const elements =
-            document.querySelectorAll(selector);
+            root.querySelectorAll(selector);
 
 
         for (const element of elements) {
@@ -299,11 +243,12 @@ function extractCurrentEmail() {
     const subjectEl =
         findSubjectElement();
 
-    const senderEl =
-        findSenderElement();
-
     const bodyEl =
         findBodyElement();
+
+    // Keep sender and body within the same Gmail message in a conversation.
+    const messageRoot = bodyEl && bodyEl.closest(".adn");
+    const senderEl = messageRoot && findSenderElement(messageRoot);
 
 
     if (
@@ -316,11 +261,9 @@ function extractCurrentEmail() {
 
 
     const subject =
-        (
-            subjectEl.innerText ||
-            subjectEl.textContent ||
-            ""
-        ).trim();
+        Array.from(subjectEl.childNodes)
+            .filter(node => node.id !== "netra-mail-badge")
+            .map(node => node.textContent || "").join("").trim();
 
 
     let sender =
@@ -363,8 +306,7 @@ function extractCurrentEmail() {
     let recipient = "";
 
     const recipientSelectors = [
-        "[email][data-hovercard-id]",
-        "span[email]"
+        "span.g2[email]"
     ];
 
 
@@ -374,7 +316,7 @@ function extractCurrentEmail() {
     ) {
 
         const elements =
-            document.querySelectorAll(
+            messageRoot.querySelectorAll(
                 selector
             );
 
@@ -449,36 +391,16 @@ function extractCurrentEmail() {
 function createEmailKey(
     subject,
     sender,
-    body
+    body,
+    html = "",
+    recipient = ""
 ) {
 
     const raw =
-        `${subject}|${sender}|${body.slice(0, 500)}`;
+        JSON.stringify([subject, sender, body, html, recipient]);
 
-    let hash = 0;
-
-
-    for (
-        let i = 0;
-        i < raw.length;
-        i++
-    ) {
-
-        hash =
-            (
-                (
-                    hash << 5
-                ) -
-                hash
-            ) +
-            raw.charCodeAt(i);
-
-
-        hash |= 0;
-    }
-
-
-    return String(hash);
+    // Exact comparison avoids truncated-body and short-hash collisions.
+    return raw;
 }
 
 
@@ -489,12 +411,12 @@ function createEmailKey(
 async function scanCurrentEmail() {
 
     if (!protectionEnabled) {
-        return;
+        throw new Error("Enable Email Protection before analyzing an email.");
     }
 
 
     if (scanning) {
-        return;
+        throw new Error("An analysis is already in progress.");
     }
 
 
@@ -503,7 +425,7 @@ async function scanCurrentEmail() {
 
 
     if (!email) {
-        return;
+        throw new Error("Open a single Gmail email with a visible sender, subject, and body.");
     }
 
 
@@ -511,25 +433,17 @@ async function scanCurrentEmail() {
         createEmailKey(
             email.subject,
             email.sender,
-            email.body
+            email.body,
+            email.html,
+            email.recipient
         );
-
-
-    if (
-        lastEmailKey === emailKey
-    ) {
-
-        return;
-    }
 
 
     lastEmailKey =
         emailKey;
 
 
-    showScanningBadge(
-        email.subjectEl
-    );
+    showScanningBadge(findSubjectElement());
 
 
     scanning = true;
@@ -548,6 +462,13 @@ async function scanCurrentEmail() {
                 result
             );
 
+        if (!protectionEnabled) throw new Error("Analysis was disabled before the result arrived.");
+        const current = extractCurrentEmail();
+        if (!current || createEmailKey(current.subject, current.sender, current.body, current.html, current.recipient) !== emailKey) {
+            removeNetraBadge();
+            throw new Error("The open message changed during analysis. Analyze the current message again.");
+        }
+
 
         if (!normalized) {
 
@@ -562,6 +483,8 @@ async function scanCurrentEmail() {
             normalized
         );
 
+        return normalized;
+
     }
     catch (error) {
 
@@ -571,10 +494,9 @@ async function scanCurrentEmail() {
         );
 
 
-        renderErrorBadge(
-            findSubjectElement(),
-            error.message
-        );
+        removeNetraBadge();
+
+        throw error;
 
     }
     finally {
@@ -582,6 +504,25 @@ async function scanCurrentEmail() {
         scanning = false;
     }
 }
+
+
+// ============================================================
+// EXPLICIT USER-INITIATED ANALYSIS
+// ============================================================
+
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    if (!message || message.type !== "NETRA_ANALYZE_CURRENT_EMAIL") {
+        return;
+    }
+    if (!protectionEnabled) {
+        sendResponse({success: false, error: "Enable Email Protection before analyzing an email."});
+        return;
+    }
+    scanCurrentEmail()
+        .then(result => sendResponse({success: true, result}))
+        .catch(error => sendResponse({success: false, error: error.message}));
+    return true;
+});
 
 
 // ============================================================
@@ -670,6 +611,7 @@ function normalizeResult(data) {
     if (!data) {
         return null;
     }
+    if (data.risk_score == null && data.score == null && (!data.decision || data.decision.score == null)) return null;
 
 
     const decision =
@@ -690,7 +632,7 @@ function normalizeResult(data) {
         String(
             decision.risk_level ??
             decision.risk ??
-            data.classification ??
+            (score >= 75 ? "CRITICAL" : score >= 50 ? "HIGH" : score >= 25 ? "LOW" : "LOW RISK") ??
             "UNKNOWN"
         ).toUpperCase();
 
@@ -702,12 +644,15 @@ function normalizeResult(data) {
         ).toUpperCase();
 
 
-    const confidence =
+    let confidence =
         Number(
             decision.confidence ??
             data.confidence ??
             0
         );
+
+    if (!data.decision && confidence <= 1) confidence *= 100;
+    if (!Number.isFinite(score) || score < 0 || score > 100 || !Number.isFinite(confidence)) return null;
 
 
     const classification =
@@ -725,6 +670,8 @@ function normalizeResult(data) {
         action,
         confidence,
         classification,
+        emailId: String(data.email_id || ""),
+        dashboardUrl: String(data.dashboard_url || ""),
         raw: data
     };
 }
@@ -741,6 +688,9 @@ function showScanningBadge(
     if (!subjectEl) {
         return;
     }
+
+    const oldLink = document.getElementById("netra-mail-report-link");
+    if (oldLink) oldLink.remove();
 
 
     let badge =
@@ -889,6 +839,30 @@ function renderThreatBadge(
 
     badge.title =
         `${result.classification} | Confidence ${result.confidence}%`;
+
+    const oldLink = document.getElementById("netra-mail-report-link");
+    if (oldLink) oldLink.remove();
+    if (result.dashboardUrl) {
+        const reportLink = document.createElement("a");
+        reportLink.id = "netra-mail-report-link";
+        reportLink.href = result.dashboardUrl;
+        reportLink.target = "_blank";
+        reportLink.rel = "noopener noreferrer";
+        reportLink.textContent = "View forensic report";
+        reportLink.title = "Open this email investigation in the NETRA SOC dashboard";
+        reportLink.style.cssText = `
+            display:inline-flex;
+            align-items:center;
+            margin-left:8px;
+            color:#0b57d0;
+            font-family:Arial,sans-serif;
+            font-size:12px;
+            font-weight:700;
+            text-decoration:underline;
+            white-space:nowrap;
+        `;
+        subjectEl.appendChild(reportLink);
+    }
 }
 
 
@@ -969,4 +943,6 @@ function removeNetraBadge() {
     if (badge) {
         badge.remove();
     }
+    const reportLink = document.getElementById("netra-mail-report-link");
+    if (reportLink) reportLink.remove();
 }

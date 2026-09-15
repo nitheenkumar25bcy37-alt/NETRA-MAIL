@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any, Dict, List
 from uuid import uuid4
+from backend.audit_context import current_actor
 
 
 class CaseService:
@@ -84,7 +85,7 @@ class CaseService:
         return self.require(case_id)
 
     def timeline(self, case_id: str, event_type: str, description: str, evidence_refs: List[str]) -> Dict[str, Any]:
-        event = {"event_id": "event_" + uuid4().hex[:12], "case_id": case_id, "event_type": event_type, "description": description, "actor": "analyst", "evidence_refs": evidence_refs, "created_at": self._now()}
+        event = {"event_id": "event_" + uuid4().hex[:12], "case_id": case_id, "event_type": event_type, "description": description, "actor": current_actor(), "evidence_refs": evidence_refs, "created_at": self._now()}
         return self.db.add_case_timeline(event)
 
     def _validate(self, data: Dict[str, Any], partial: bool = False) -> None:

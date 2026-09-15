@@ -5,19 +5,19 @@ Date: Tue, 08 Sep 2026 10:00:00 +0000
 Authentication-Results: example; spf=pass; dkim=pass; dmarc=pass
 MIME-Version: 1.0
 Content-Type: multipart/alternative;
- boundary="===============3337486818120754580=="
+ boundary="===============3518258467188069680=="
 
---===============3337486818120754580==
+--===============3518258467188069680==
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
 
 Click https://banco.es/verify to review your account.
 
---===============3337486818120754580==
+--===============3518258467188069680==
 Content-Type: text/html; charset="utf-8"
 Content-Transfer-Encoding: 7bit
 MIME-Version: 1.0
 
 <a href="https://banco.es/verify">Review account</a>
 
---===============3337486818120754580==--
+--===============3518258467188069680==--

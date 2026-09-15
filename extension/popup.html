@@ -202,7 +202,7 @@
             </div>
 
             <div class="version">
-                Real-Time Email Protection
+                Email threat analysis
             </div>
         </div>
 
@@ -226,9 +226,9 @@
 
         <div class="description">
 
-            NETRA automatically analyzes emails when you open
-            them in Gmail and displays the threat assessment
-            beside the email subject.
+            NETRA analyzes an open Gmail email only when you select
+            <strong>Analyze current email</strong>. The result appears beside
+            the subject and in this panel.
 
         </div>
 
@@ -242,7 +242,7 @@
                 </div>
 
                 <div class="toggle-subtitle">
-                    Automatically scan Gmail emails
+                    Allow manual Gmail analysis
                 </div>
 
             </div>
@@ -266,17 +266,29 @@
 
             <strong>When enabled:</strong><br>
 
-            Open any Gmail email and NETRA will automatically
-            analyze the sender, subject, body, domains and
+            Open a Gmail email and choose <strong>Analyze current email</strong>.
+            NETRA then analyzes the sender, subject, body, domains and
             phishing indicators.
 
             <br><br>
 
-            No manual upload is required.
+            No automatic background email scanning is performed.
 
         </div>
 
         <button class="analyze-button" id="analyzeButton" type="button">Analyze current email</button>
+        <details class="info">
+            <summary>Backend authentication</summary>
+            <label for="apiOrigin">NETRA server address</label>
+            <input id="apiOrigin" type="url" placeholder="https://netra.example.org" style="width:100%">
+            <p>Analyzing sends the visible message to this server. Only use your organization's trusted NETRA server.</p>
+            <label for="apiKey">Access key for this NETRA server</label>
+            <input id="apiKey" type="password" autocomplete="off" maxlength="512" style="width:100%">
+            <label for="dashboardOrigin">SOC dashboard address</label>
+            <input id="dashboardOrigin" type="url" placeholder="http://127.0.0.1:8501" style="width:100%">
+            <button id="saveApiKey" type="button">Use key for this browser session</button>
+            <p>The key is cleared when the browser session ends. Visible-message analysis cannot verify full headers or attachments.</p>
+        </details>
         <div class="result" id="result" aria-live="polite"></div>
 
     </div>
@@ -287,6 +299,7 @@
     </div>
 
 
+    <script src="connection.js"></script>
     <script src="popup.js"></script>
 
 </body>

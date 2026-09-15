@@ -5,20 +5,20 @@ Date: Tue, 08 Sep 2026 10:00:00 +0000
 Authentication-Results: example; spf=pass; dkim=pass
 MIME-Version: 1.0
 Content-Type: multipart/alternative;
- boundary="===============1430090038672791397=="
+ boundary="===============9175940416119191063=="
 
---===============1430090038672791397==
+--===============9175940416119191063==
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: quoted-printable
 
 You were mentioned in an issue: https://github.com/org/repo/issues/123. View =
 on GitHub.
 
---===============1430090038672791397==
+--===============9175940416119191063==
 Content-Type: text/html; charset="utf-8"
 Content-Transfer-Encoding: 7bit
 MIME-Version: 1.0
 
 <a href="https://github.com/org/repo/issues/123">View on GitHub</a>
 
---===============1430090038672791397==--
+--===============9175940416119191063==--

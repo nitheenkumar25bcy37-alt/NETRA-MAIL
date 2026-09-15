@@ -5,9 +5,9 @@ Date: Tue, 08 Sep 2026 10:00:00 +0000
 Authentication-Results: example; spf=pass; dkim=pass; dmarc=pass
 MIME-Version: 1.0
 Content-Type: multipart/alternative;
- boundary="===============0188835564431696510=="
+ boundary="===============1951364625926954348=="
 
---===============0188835564431696510==
+--===============1951364625926954348==
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: quoted-printable
 
@@ -15,7 +15,7 @@ We received your password reset request. Click the link below to set a new pa=
 ssword. https://secure.chase.com/reset?token=3Dabc&expires=3D3600 This link e=
 xpires in 1 hour. If you did not request this, please ignore this email.
 
---===============0188835564431696510==
+--===============1951364625926954348==
 Content-Type: text/html; charset="utf-8"
 Content-Transfer-Encoding: quoted-printable
 MIME-Version: 1.0
@@ -23,4 +23,4 @@ MIME-Version: 1.0
 <a href=3D"https://secure.chase.com/reset?token=3Dabc&amp;expires=3D3600">Res=
 et password</a>
 
---===============0188835564431696510==--
+--===============1951364625926954348==--

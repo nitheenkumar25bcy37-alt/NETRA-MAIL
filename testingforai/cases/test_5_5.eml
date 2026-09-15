@@ -5,9 +5,9 @@ Date: Tue, 08 Sep 2026 10:00:00 +0000
 Authentication-Results: example; spf=pass
 MIME-Version: 1.0
 Content-Type: multipart/alternative;
- boundary="===============3590586247657354085=="
+ boundary="===============2230870173816287560=="
 
---===============3590586247657354085==
+--===============2230870173816287560==
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
 
@@ -15,7 +15,7 @@ Article 1: https://techcrunch.com/article1
 Article 2: https://techcrunch.com/article2
 Article 3: https://techcrunch.com/article3
 
---===============3590586247657354085==
+--===============2230870173816287560==
 Content-Type: text/html; charset="utf-8"
 Content-Transfer-Encoding: quoted-printable
 MIME-Version: 1.0
@@ -24,4 +24,4 @@ MIME-Version: 1.0
 echcrunch.com/article2">Article 2</a><a href=3D"https://techcrunch.com/articl=
 e3">Article 3</a>
 
---===============3590586247657354085==--
+--===============2230870173816287560==--

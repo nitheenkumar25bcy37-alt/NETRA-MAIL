@@ -9,9 +9,15 @@ import requests
 class APIClient:
     def __init__(self, base_url: str | None = None):
         self.base_url = (base_url or os.getenv("NETRA_API_URL", "http://127.0.0.1:8000")).rstrip("/")
+        self.api_key = os.getenv("NETRA_API_ACCESS_KEY", "").strip()
 
     def request(self, method: str, path: str, **kwargs) -> Any:
-        response = requests.request(method, f"{self.base_url}{path}", timeout=15, **kwargs)
+        headers = dict(kwargs.pop("headers", {}) or {})
+        if self.api_key:
+            headers["X-NETRA-API-Key"] = self.api_key
+        response = requests.request(method, f"{self.base_url}{path}", timeout=45, headers=headers, allow_redirects=False, **kwargs)
+        if 300 <= response.status_code < 400:
+            raise RuntimeError("Backend redirects are not permitted.")
         response.raise_for_status()
         return response.json()
 
@@ -42,8 +48,14 @@ class APIClient:
     def trace(self, email_id: str) -> Dict[str, Any]:
         return self.get(f"/api/v2/emails/{email_id}/trace")
 
+    def graph(self, email_id: str) -> Dict[str, Any]:
+        return self.get(f"/api/v2/emails/{email_id}/graph")
+
     def relationships(self, email_id: str) -> Dict[str, Any]:
         return self.get(f"/api/v2/emails/{email_id}/relationships")
+
+    def ip_intelligence(self, ip: str) -> Dict[str, Any]:
+        return self.get(f"/api/v2/intelligence/ip/{ip}")
 
     def campaigns(self) -> Dict[str, Any]:
         return self.get("/api/v2/campaigns")

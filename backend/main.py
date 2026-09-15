@@ -52,9 +52,15 @@ from fastapi import (
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from pydantic import BaseModel
-from backend.security import RequestRateLimiter, validate_identifier
+from backend.security import RequestRateLimiter, validate_identifier, valid_api_key
+from backend.access_control import AccessPolicy, Principal
+from backend.request_limits import RequestBodyLimit
+from backend.audit_context import actor as audit_actor
 
 logger = logging.getLogger("netra")
+from backend.deployment_guard import validate_hosted_environment
+validate_hosted_environment()
+access_policy = AccessPolicy(os.getenv("NETRA_API_IDENTITIES", "[]"))
 
 
 # ================================================================
@@ -78,6 +84,8 @@ try:
         RATE_LIMIT_REQUESTS,
         RATE_LIMIT_WINDOW_SECONDS,
         RATE_LIMIT_MAX_KEYS,
+        API_AUTH_REQUIRED,
+        API_ACCESS_KEY,
     )
 
     from backend.database import ForensicLedgerDB
@@ -126,6 +134,8 @@ except ImportError:
         RATE_LIMIT_REQUESTS,
         RATE_LIMIT_WINDOW_SECONDS,
         RATE_LIMIT_MAX_KEYS,
+        API_AUTH_REQUIRED,
+        API_ACCESS_KEY,
     )
 
     from database import ForensicLedgerDB
@@ -171,6 +181,9 @@ rate_limiter = RequestRateLimiter(
 
 def _client_rate_limit_key(request: Request) -> str:
     """Return a stable client key without trusting forwarded headers."""
+    identity = getattr(request.state, "principal", None)
+    if identity is not None:
+        return f"principal:{identity.subject}"
     client = request.client
     if client and client.host:
         return f"ip:{client.host}"
@@ -194,6 +207,22 @@ def _enforce_rate_limit(request: Request) -> None:
     )
 
 
+async def _read_limited_upload(file: UploadFile, maximum_bytes: int) -> bytes:
+    """Read an upload in bounded chunks and reject it before memory is exhausted."""
+    chunks: list[bytes] = []
+    total = 0
+    chunk_size = 256 * 1024
+    while True:
+        chunk = await file.read(chunk_size)
+        if not chunk:
+            break
+        total += len(chunk)
+        if total > maximum_bytes:
+            raise HTTPException(status_code=413, detail="Upload exceeds the configured size limit.")
+        chunks.append(chunk)
+    return b"".join(chunks)
+
+
 # ================================================================
 # APPLICATION
 # ================================================================
@@ -209,6 +238,55 @@ app = FastAPI(
 )
 
 
+@app.middleware("http")
+async def deployment_access_control(request: Request, call_next):
+    """Protect investigation data when the service is deployed beyond localhost.
+
+    Set NETRA_REQUIRE_API_AUTH=true and NETRA_API_ACCESS_KEY through the
+    deployment secret manager. Health and documentation endpoints remain open
+    for monitoring and local API discovery.
+    """
+    public_paths = {"/health", "/ready"}
+    if request.url.path not in public_paths:
+        origin = request.headers.get("origin")
+        if origin and origin not in ALLOWED_ORIGINS:
+            return Response(content='{"detail":"Origin not permitted"}', status_code=403, media_type="application/json")
+        identity = None
+        supplied = request.headers.get("X-NETRA-API-Key", "")
+        if access_policy.enabled:
+            identity = access_policy.authenticate(supplied)
+        elif API_AUTH_REQUIRED and valid_api_key(supplied, API_ACCESS_KEY):
+            identity = Principal("deployment-admin", "admin")
+        elif not API_AUTH_REQUIRED:
+            host = request.client.host if request.client else ""
+            # Explicitly local mode. Never infer locality from forwarded headers.
+            if host in {"127.0.0.1", "::1", "testclient"}:
+                identity = Principal("local-operator", "admin")
+        if identity is None:
+            return Response(
+                content='{"detail":"Authentication required"}',
+                status_code=401,
+                media_type="application/json",
+                headers={"WWW-Authenticate": "ApiKey"},
+            )
+        if not access_policy.allowed(identity, request.method, request.url.path):
+            return Response(content='{"detail":"Insufficient permissions"}', status_code=403, media_type="application/json")
+        if identity.role == "submitter" and request.method == "GET" and request.url.path.startswith("/api/v2/emails/"):
+            email_id = request.url.path.strip("/").split("/")[3]
+            if db.analysis_owner(email_id) != identity.subject:
+                return Response(content='{"detail":"Email analysis was not found"}', status_code=404, media_type="application/json")
+        request.state.principal = identity
+    context_token = audit_actor.set(getattr(getattr(request.state, "principal", None), "subject", "anonymous"))
+    try:
+        response = await call_next(request)
+    finally:
+        audit_actor.reset(context_token)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    return response
+
+
 # ================================================================
 # CORS
 # ================================================================
@@ -220,6 +298,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(RequestBodyLimit, maximum_bytes=max(MAX_EMAIL_SIZE_BYTES, MAX_EVIDENCE_SIZE_BYTES) + 65536)
 
 
 # ================================================================
@@ -2096,6 +2175,21 @@ def _create_seal(
 # THREAT SCORING
 # ================================================================
 
+def _is_high_confidence_ssrf_destination(analysis: Dict[str, Any]) -> bool:
+    """Identify explicit special-use targets without blocking normal intranets."""
+    if not isinstance(analysis, dict) or not analysis.get("ssrf_risk"):
+        return False
+    hostname = str(analysis.get("hostname", "")).strip().lower().rstrip(".")
+    if hostname == "localhost" or hostname.endswith(".localhost"):
+        return True
+    return any(
+        bool(analysis.get(flag))
+        for flag in (
+            "is_private_ip", "is_loopback", "is_link_local", "is_reserved_ip",
+            "is_multicast", "is_unspecified_ip",
+        )
+    )
+
 def _apply_ssrf_scoring_override(
     result: Dict[str, Any],
     url: Dict[str, Any],
@@ -2113,7 +2207,7 @@ def _apply_ssrf_scoring_override(
     ssrf_items = []
     for item in urls:
         analysis = item.get("analysis", item) if isinstance(item, dict) else {}
-        if isinstance(analysis, dict) and analysis.get("ssrf_risk"):
+        if _is_high_confidence_ssrf_destination(analysis):
             ssrf_items.append(analysis)
 
     if not ssrf_items:
@@ -2475,7 +2569,7 @@ def _apply_ssrf_decision_override(
     urls = url.get("urls", []) if isinstance(url, dict) else []
     has_ssrf = any(
         isinstance(item, dict)
-        and (item.get("analysis", item) or {}).get("ssrf_risk")
+        and _is_high_confidence_ssrf_destination(item.get("analysis", item) or {})
         for item in (urls or [])
     )
     if not has_ssrf:
@@ -3712,10 +3806,8 @@ async def health():
     except Exception:
         model_available = False
 
-    try:
-        ledger = db.verify_chain_integrity()
-    except Exception as exc:
-        ledger = {"status": "ERROR", "valid": False, "error": type(exc).__name__}
+    # Keep public liveness probes cheap; full auditing requires authentication.
+    ledger = {"status": "NOT_CHECKED", "valid": None}
 
     return {
         "status": "healthy",
@@ -3724,7 +3816,7 @@ async def health():
         "extension_api": True,
         "soc_api": True,
         "model_available": model_available,
-        "ledger": ledger,
+        "ledger": {"status": ledger.get("status"), "valid": ledger.get("valid")},
     }
 
 
@@ -3749,13 +3841,12 @@ async def readiness():
         checks["ml_model"] = {"ok": False, "error": type(exc).__name__}
 
     try:
-        ledger = db.verify_chain_integrity()
-        ledger_ok = bool(ledger.get("valid", False)) and ledger.get("status") not in {"ERROR", "CORRUPT"}
+        with db._connect() as conn:
+            conn.execute("SELECT 1").fetchone()
         checks["forensic_ledger"] = {
-            "ok": ledger_ok,
-            "status": ledger.get("status"),
-            "valid": ledger.get("valid"),
-            "total_records": ledger.get("total_records"),
+            "ok": True,
+            "status": "reachable",
+            "integrity": "Use the authenticated audit endpoint for chain verification.",
         }
     except Exception as exc:
         checks["forensic_ledger"] = {"ok": False, "error": type(exc).__name__}
@@ -3769,7 +3860,7 @@ async def readiness():
     for name, raw_path in storage_paths.items():
         path = os.path.abspath(str(raw_path))
         exists = os.path.isdir(path)
-        storage_details[name] = {"ok": exists, "path": path}
+        storage_details[name] = {"ok": exists}
         storage_ok = storage_ok and exists
     checks["storage"] = {"ok": storage_ok, "paths": storage_details}
 
@@ -3834,7 +3925,7 @@ async def analyze_eml_file(
 
         )
 
-    raw = await file.read()
+    raw = await _read_limited_upload(file, MAX_EMAIL_SIZE_BYTES)
 
     if not raw:
 
@@ -4561,6 +4652,50 @@ async def audit_chain_integrity():
 # VERSION 2 STRUCTURED ANALYSIS API
 # ================================================================
 
+@app.post("/api/v2/mailbox/analyze")
+async def analyze_selected_mailbox_message(request: Request):
+    """Fetch the selected original at the backend; clients cannot assert trust."""
+    _enforce_rate_limit(request)
+    from backend.mailbox_ingestion import fetch_original
+    try:
+        body = await request.json()
+        if not isinstance(body, dict) or set(body) != {"provider", "message_id", "access_token"}:
+            raise ValueError()
+        provider, identifier, token = (body[key] for key in ("provider", "message_id", "access_token"))
+        if (provider not in {"gmail", "microsoft"} or not isinstance(identifier, str)
+                or not isinstance(token, str) or not 1 <= len(token) <= 8192
+                or not 1 <= len(identifier) <= 2048):
+            raise ValueError()
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="A supported provider, message ID and access token are required.")
+    try:
+        raw = await asyncio.to_thread(fetch_original, provider, identifier, token)
+    except Exception:
+        raise HTTPException(status_code=502, detail="The mailbox provider could not supply the selected original message.")
+    finally:
+        body.clear()
+        token = None
+    try:
+        result = await asyncio.to_thread(v2_orchestrator.analyze, raw, "eml",
+            trusted_receiver="gmail" if provider == "gmail" else None)
+    except Exception:
+        raise HTTPException(status_code=422, detail="The selected message could not be safely analyzed.")
+    payload = result.model_dump()
+    try:
+        evidence = evidence_service.register(raw, "original.eml", "message/rfc822", "raw_eml",
+            provider + "_connector", result.email_id)
+        payload["evidence_reference"] = {key: evidence[key] for key in ("evidence_id", "sha256", "integrity_status")}
+    except Exception:
+        payload["evidence_reference"] = None
+    db.record_v2_analysis(result.email_id, result.evidence.sha256, payload)
+    payload["correlation"] = _run_correlation(result.email_id)
+    db.record_v2_analysis(result.email_id, result.evidence.sha256, payload)
+    db.set_analysis_owner(result.email_id, request.state.principal.subject)
+    if request.state.principal.role == "submitter":
+        payload.pop("correlation", None)
+    return {"status": "SUCCESS", **payload}
+
+
 @app.post("/api/v2/emails/upload")
 async def upload_email_v2(
     request: Request,
@@ -4570,7 +4705,7 @@ async def upload_email_v2(
     filename = (file.filename or "").strip()
     if not filename.lower().endswith(".eml"):
         raise HTTPException(status_code=400, detail="Only .eml files are supported.")
-    raw = await file.read()
+    raw = await _read_limited_upload(file, MAX_EMAIL_SIZE_BYTES)
     if not raw:
         raise HTTPException(status_code=400, detail="Uploaded email is empty.")
     if len(raw) > MAX_EMAIL_SIZE_BYTES:
@@ -4587,10 +4722,12 @@ async def upload_email_v2(
         payload["evidence_reference"] = {"evidence_id": registered_evidence["evidence_id"], "sha256": registered_evidence["sha256"], "integrity_status": registered_evidence["integrity_status"]}
     except Exception:
         payload["evidence_reference"] = None
-    v2_results[result.email_id] = payload
     db.record_v2_analysis(result.email_id, result.evidence.sha256, payload)
     payload["correlation"] = _run_correlation(result.email_id)
     db.record_v2_analysis(result.email_id, result.evidence.sha256, payload)
+    db.set_analysis_owner(result.email_id, request.state.principal.subject)
+    if request.state.principal.role == "submitter":
+        payload = {key: value for key, value in payload.items() if key != "correlation"}
     return {"status": "SUCCESS", **payload}
 
 
@@ -4602,28 +4739,34 @@ async def analyze_email_v2(
     _enforce_rate_limit(http_request)
     if not any((request.subject, request.sender, request.body, request.html)):
         raise HTTPException(status_code=400, detail="Email content is empty.")
-    raw = _build_v2_message(request)
-    result = await asyncio.to_thread(v2_orchestrator.analyze, raw, "api")
+    try:
+        raw = _build_v2_message(request)
+        result = await asyncio.to_thread(v2_orchestrator.analyze, raw, "api")
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="Invalid or oversized email fields.")
+    except Exception:
+        raise HTTPException(status_code=422, detail="The email could not be safely analyzed.")
     payload = result.model_dump()
     try:
-        registered_evidence = evidence_service.register(raw, "gmail-live-analysis.eml", "message/rfc822", "raw_eml", "api", result.email_id)
+        registered_evidence = evidence_service.register(raw, "reconstructed-message.eml", "message/rfc822", "reconstructed_eml", "api_reconstruction", result.email_id)
         payload["evidence_reference"] = {"evidence_id": registered_evidence["evidence_id"], "sha256": registered_evidence["sha256"], "integrity_status": registered_evidence["integrity_status"]}
     except Exception:
         payload["evidence_reference"] = None
-    v2_results[result.email_id] = payload
+    payload["limitations"].append("This message was reconstructed from supplied fields. Its hash does not authenticate the original delivered email; full headers and attachments may be unavailable.")
     db.record_v2_analysis(result.email_id, result.evidence.sha256, payload)
     payload["correlation"] = _run_correlation(result.email_id)
     db.record_v2_analysis(result.email_id, result.evidence.sha256, payload)
+    db.set_analysis_owner(result.email_id, http_request.state.principal.subject)
+    if http_request.state.principal.role == "submitter":
+        payload = {key: value for key, value in payload.items() if key != "correlation"}
     return {"status": "SUCCESS", **payload}
 
 
 def _get_v2_result(email_id: str) -> Dict[str, Any]:
-    result = v2_results.get(email_id)
-    if result is None:
-        try:
-            result = db.get_v2_analysis(email_id)
-        except Exception:
-            result = None
+    try:
+        result = db.get_v2_analysis(email_id)
+    except Exception:
+        raise HTTPException(status_code=503, detail="Investigation storage is unavailable.")
     if not result:
         raise HTTPException(status_code=404, detail="Email analysis was not found.")
     return result
@@ -4759,9 +4902,9 @@ async def link_case_campaign_v2(case_id: str, campaign_id: str):
 
 
 @app.post("/api/v2/cases/{case_id}/notes")
-async def add_case_note_v2(case_id: str, request: NoteRequest):
+async def add_case_note_v2(case_id: str, request: NoteRequest, http_request: Request):
     try:
-        case_service.add_note(case_id, request.note, request.actor)
+        case_service.add_note(case_id, request.note, http_request.state.principal.subject)
         return case_service.require(case_id)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
@@ -4797,7 +4940,7 @@ async def register_evidence_v2(
     email_id: str | None = Form(None),
 ):
     _enforce_rate_limit(request)
-    raw = await file.read()
+    raw = await _read_limited_upload(file, MAX_EVIDENCE_SIZE_BYTES)
     if len(raw) > MAX_EVIDENCE_SIZE_BYTES:
         raise HTTPException(status_code=413, detail="Evidence exceeds the configured size limit.")
     if case_id and not db.get_case_record(case_id):
@@ -4821,9 +4964,10 @@ async def get_evidence_v2(evidence_id: str):
 
 
 @app.get("/api/v2/evidence/{evidence_id}/verify")
-async def verify_evidence_v2(evidence_id: str):
+async def verify_evidence_v2(evidence_id: str, request: Request):
+    _enforce_rate_limit(request)
     try:
-        return evidence_service.verify(evidence_id)
+        return await asyncio.to_thread(evidence_service.verify, evidence_id)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
 
@@ -4844,7 +4988,7 @@ async def create_evidence_version_v2(
     reason: str = Form("replacement_preserved_as_new_version"),
 ):
     _enforce_rate_limit(request)
-    raw = await file.read()
+    raw = await _read_limited_upload(file, MAX_EVIDENCE_SIZE_BYTES)
     if len(raw) > MAX_EVIDENCE_SIZE_BYTES:
         raise HTTPException(status_code=413, detail="Evidence version exceeds the configured size limit.")
     try:
@@ -4889,9 +5033,10 @@ async def case_custody_v2(case_id: str):
 
 
 @app.post("/api/v2/cases/{case_id}/reports")
-async def create_case_report_v2(case_id: str, report_format: str = "json"):
+async def create_case_report_v2(case_id: str, request: Request, report_format: str = "json"):
+    _enforce_rate_limit(request)
     try:
-        return report_service.generate(case_id, report_format.lower())
+        return await asyncio.to_thread(report_service.generate, case_id, report_format.lower())
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
     except (ValueError, RuntimeError) as exc:
@@ -4922,13 +5067,26 @@ async def download_report_v2(report_id: str):
     if EVIDENCE_STORAGE_DIR.resolve() not in path.parents or not path.is_file():
         raise HTTPException(status_code=404, detail="Report file is unavailable")
     media_type = {"json": "application/json", "html": "text/html; charset=utf-8", "pdf": "application/pdf"}.get(report["format"], "application/octet-stream")
-    return Response(content=path.read_bytes(), media_type=media_type, headers={"Content-Disposition": f"attachment; filename={report_id}.{report['format']}"})
+    try:
+        content = report_service.download(report_id)
+    except (OSError, ValueError):
+        raise HTTPException(status_code=409, detail="Report integrity could not be verified or its encryption key is unavailable.")
+    return Response(content=content, media_type=media_type, headers={"Content-Disposition": f"attachment; filename={report_id}.{report['format']}"})
 
 
 @app.get("/api/v2/emails/{email_id}")
 async def get_email_v2(email_id: str):
     result = _get_v2_result(email_id)
-    return {key: result[key] for key in ("email_id", "evidence", "classification", "risk_score", "confidence", "limitations")}
+    response = {key: result[key] for key in ("email_id", "evidence", "classification", "risk_score", "confidence", "limitations")}
+    response["parsed"] = {key: result.get("parsed", {}).get(key) for key in ("verified_authentication", "reported_authentication", "ml_analysis")}
+    response["evidence_reference"] = result.get("evidence_reference")
+    return response
+
+
+@app.get("/api/v2/me")
+async def current_identity(request: Request):
+    identity = request.state.principal
+    return {"subject": identity.subject, "role": identity.role}
 
 
 @app.get("/api/v2/dashboard/summary")
@@ -4955,25 +5113,22 @@ async def get_email_trace_v2(email_id: str):
 
 
 @app.get("/api/v2/intelligence/ip/{ip}")
-async def get_ip_intelligence_v2(ip: str):
-    return ip_intelligence_provider.lookup(ip)
+async def get_ip_intelligence_v2(ip: str, request: Request):
+    _enforce_rate_limit(request)
+    return await asyncio.to_thread(ip_intelligence_provider.lookup, ip)
 
 
 @app.get("/api/v2/intelligence/domain/{domain}")
-async def get_domain_intelligence_v2(domain: str):
-    return domain_intelligence_provider.inspect(domain, source="api")
+async def get_domain_intelligence_v2(domain: str, request: Request):
+    _enforce_rate_limit(request)
+    return await asyncio.to_thread(domain_intelligence_provider.inspect, domain, source="api")
 
 
 @app.get("/api/v2/emails/{email_id}/graph")
 async def get_email_graph_v2(email_id: str):
+    from backend.services.investigation_graph import build_graph
     result = _get_v2_result(email_id)
-    parsed = result.get("parsed", {})
-    metadata = parsed.get("metadata", {})
-    nodes = [{"type": "email", "id": email_id}]
-    for domain in {str(metadata.get("from", "")).split("@")[-1].lower(), *[str(url).split("/")[2].lower() for url in parsed.get("urls", []) if "://" in str(url)]}:
-        if domain and "." in domain:
-            nodes.append({"type": "domain", "id": domain})
-    return {"email_id": email_id, "nodes": nodes, "edges": [{"source": email_id, "target": node["id"], "type": "contains_or_sent_from"} for node in nodes[1:]]}
+    return build_graph(result, db.get_relationships(email_id))
 
 
 # ================================================================

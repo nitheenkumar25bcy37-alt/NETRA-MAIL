@@ -1,7 +1,9 @@
-"""
-Email Authentication Analyzer
-Validates SPF, DKIM, DMARC and other authentication headers
-Detects spoofing and authentication failures
+"""Email authentication evidence parser.
+
+This module interprets authentication results added by a receiving mail
+provider. It deliberately does *not* claim that a DKIM-Signature header alone
+proves a valid signature: cryptographic verification needs the original
+canonicalised message and DNS lookup.
 """
 
 import re
@@ -33,7 +35,9 @@ class AuthenticationAnalyzer:
             "dkim_status": "UNKNOWN",
             "dmarc_status": "UNKNOWN",
             "authenticated": False,
-            "anomalies": []
+            "anomalies": [],
+            "authentication_source": "unavailable",
+            "verification_scope": "Authentication-Results and Received-SPF are upstream-reported results; this parser does not cryptographically re-verify DKIM or independently execute SPF/DMARC DNS checks.",
         }
 
         # 1. EXTRACT AUTHENTICATION-RESULTS HEADER
@@ -42,19 +46,25 @@ class AuthenticationAnalyzer:
             AuthenticationAnalyzer._parse_authentication_results(
                 auth_results, analysis
             )
+            analysis["authentication_source"] = "upstream_authentication_results"
 
         # 2. PARSE SPF HEADER
         received_spf = headers.get("Received-SPF", "")
         if received_spf:
             AuthenticationAnalyzer._parse_spf_header(received_spf, analysis)
+            if analysis["authentication_source"] == "unavailable":
+                analysis["authentication_source"] = "upstream_received_spf"
 
-        # 3. CHECK DKIM-SIGNATURE
+        # 3. RECORD DKIM-SIGNATURE WITHOUT MISTAKING IT FOR A PASS.
+        # A forged message can contain this header. A PASS is accepted only
+        # when an upstream Authentication-Results header explicitly reports it.
         dkim_sig = headers.get("DKIM-Signature", "")
-        if dkim_sig:
-            analysis["dkim_status"] = "PASS"  # Signature present
-        else:
-            if analysis["dkim_status"] == "UNKNOWN":
-                analysis["dkim_status"] = "NONE"
+        analysis["dkim_signature_present"] = bool(dkim_sig)
+        if dkim_sig and analysis["dkim_status"] == "UNKNOWN":
+            analysis["dkim_status"] = "UNVERIFIED"
+            analysis["anomalies"].append("DKIM-Signature is present but no trusted authentication result was supplied.")
+        elif not dkim_sig and analysis["dkim_status"] == "UNKNOWN":
+            analysis["dkim_status"] = "NONE"
 
         # 4. PARSE FROM HEADER
         from_analysis = AuthenticationAnalyzer._analyze_from_header(

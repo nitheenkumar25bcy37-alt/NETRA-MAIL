@@ -5,9 +5,9 @@ Date: Tue, 08 Sep 2026 10:00:00 +0000
 Authentication-Results: example; spf=pass; dkim=pass; dmarc=pass
 MIME-Version: 1.0
 Content-Type: multipart/alternative;
- boundary="===============4414349334028336898=="
+ boundary="===============5113225827124012645=="
 
---===============4414349334028336898==
+--===============5113225827124012645==
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: quoted-printable
 
@@ -15,7 +15,7 @@ We received a password reset request. If this was you, click the link below. =
 If not, ignore this email. https://mybank.com/reset?token=3Dsecure_token_here=
 &expires=3D3600
 
---===============4414349334028336898==
+--===============5113225827124012645==
 Content-Type: text/html; charset="utf-8"
 Content-Transfer-Encoding: quoted-printable
 MIME-Version: 1.0
@@ -23,4 +23,4 @@ MIME-Version: 1.0
 <a href=3D"https://mybank.com/reset?token=3Dsecure_token_here&amp;expires=3D3=
 600">Reset password</a>
 
---===============4414349334028336898==--
+--===============5113225827124012645==--

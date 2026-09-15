@@ -47,7 +47,7 @@ class AnalysisOrchestrator:
     - Language alone is never considered malicious.
     """
 
-    VERSION = "4.1.0"
+    VERSION = "4.4.0"
 
     def __init__(
         self,
@@ -374,6 +374,8 @@ class AnalysisOrchestrator:
         self,
         raw: bytes,
         source_type: str = "eml",
+        *,
+        trusted_receiver: str | None = None,
     ) -> AnalysisResult:
 
         if not raw:
@@ -388,6 +390,8 @@ class AnalysisOrchestrator:
         parsed = self.parser.parse_eml_bytes(
             raw
         )
+        from backend.email_authentication import EmailAuthenticationVerifier
+        parsed["verified_authentication"] = EmailAuthenticationVerifier().verify(raw, source_type, trusted_receiver=trusted_receiver)
 
         metadata = parsed.get(
             "metadata",
@@ -420,6 +424,13 @@ class AnalysisOrchestrator:
                 ),
             )
         )
+
+        image_text = "\n".join(
+            str(item.get("image_analysis", {}).get("ocr_text", ""))
+            for item in parsed.get("attachments", [])
+        )[:20000]
+        if image_text:
+            text += "\n" + image_text
 
         # ==============================================================
         # 2. EXISTING NLP
@@ -492,6 +503,8 @@ class AnalysisOrchestrator:
         # ==============================================================
 
         findings: List[Finding] = []
+        from backend.services.content_signals import inspect_content
+        findings.extend(inspect_content(text, str(body.get("html", ""))))
 
         # --------------------------------------------------------------
         # MULTILINGUAL FINDINGS
@@ -542,6 +555,14 @@ class AnalysisOrchestrator:
         # 6. EXISTING ENGLISH CONTEXTUAL RULES
         # ==============================================================
 
+        # Generic request words are not independent authority evidence.
+        generic = {"required", "requires", "request", "requested", "please", "action required"}
+        social = [cue for cue in social if str(cue).lower() not in generic]
+        if "social_engineering" in nlp.get("categories", {}):
+            nlp["categories"]["social_engineering"] = [
+                cue for cue in nlp["categories"]["social_engineering"]
+                if str(cue).lower() not in generic
+            ]
         if urgency and (
             credentials
             or financial
@@ -600,7 +621,9 @@ class AnalysisOrchestrator:
                 )
             )
 
-        if financial and social:
+        strong_financial = [cue for cue in financial if str(cue).lower() not in {"money"}]
+        strong_authority = [cue for cue in social if str(cue).lower() not in {"click here", "click", "link"}]
+        if strong_financial and strong_authority:
             findings.append(
                 self._finding(
                     "BEC",
@@ -613,34 +636,8 @@ class AnalysisOrchestrator:
                         "with executive or confidentiality language."
                     ),
                     {
-                        "financial": financial[:5],
-                        "social": social[:5],
-                    },
-                )
-            )
-
-        if credentials and parsed.get(
-            "urls"
-        ):
-            findings.append(
-                self._finding(
-                    "Text",
-                    "credential_request_with_link",
-                    "high",
-                    0.88,
-                    "Credential request includes a link",
-                    (
-                        "Credential-related language is paired "
-                        "with one or more extracted URLs."
-                    ),
-                    {
-                        "url_count": len(
-                            parsed.get(
-                                "urls",
-                                [],
-                            )
-                        ),
-                        "credential_cues": credentials[:5],
+                        "financial": strong_financial[:5],
+                        "social": strong_authority[:5],
                     },
                 )
             )
@@ -656,12 +653,33 @@ class AnalysisOrchestrator:
             or {}
         )
 
-        findings.extend(
-            header.get(
-                "findings",
-                [],
-            )
-        )
+        verified = parsed["verified_authentication"]
+        for item in header.get("findings", []):
+            item = dict(item)
+            if verified["dmarc"]["status"] == "pass" and item.get("rule") in {"spf_misalignment", "dkim_misalignment", "dmarc_misalignment"}:
+                item["severity"] = "info"
+                item.setdefault("limitations", []).append("Verified DMARC passed through at least one aligned identifier.")
+            if item.get("rule") == "malformed_received" and str(item.get("evidence", {}).get("raw_header", "")).lstrip().lower().startswith("by "):
+                item["severity"] = "info"
+                item.setdefault("limitations", []).append("A receiver-added by-only hop is valid delivery metadata.")
+            findings.append(item)
+        parsed["reported_authentication"] = {
+            "results": header.get("authentication", {}),
+            "independently_verified": False,
+            "limitations": ["Supplied authentication headers may be forged. Refer to verified_authentication for local DKIM checks."]
+        }
+        if verified["dkim"]["status"] == "fail":
+            findings.append(Finding(
+                category="Authentication", rule="local_dkim_failure", severity="medium",
+                confidence=0.9, title="Original-message DKIM verification failed",
+                description="The checked signatures did not validate against the current public keys.",
+                evidence=verified["dkim"], limitations=verified["limitations"]
+            ))
+        if verified["dmarc"]["status"] == "fail":
+            findings.append(Finding(category="Authentication", rule="verified_dmarc_failure", severity="high",
+                confidence=0.92, title="Verified identifiers fail DMARC alignment",
+                description="Neither verified DKIM nor trusted receiver SPF aligns with the visible From domain.",
+                evidence=verified["dmarc"], limitations=verified["limitations"]))
 
         # ==============================================================
         # 8. URL ANALYSIS
@@ -684,6 +702,24 @@ class AnalysisOrchestrator:
             ]
         )
 
+        for item in parsed.get("attachments", []):
+            for value in item.get("embedded_urls", [])[:20]:
+                references.append({"href": value, "visible_text": "QR or attachment URL"})
+
+        from backend.url_expander import URLExpander
+        expansions = []
+        if URLAnalyzer:
+            for reference in list(references)[:100]:
+                target = str(reference.get("href", ""))
+                if len(expansions) >= 2:
+                    break
+                if URLAnalyzer.analyze_url(target).get("is_shortener"):
+                    expansion = URLExpander.expand(target)
+                    expansions.append(expansion)
+                    if expansion.get("expanded"):
+                        references.append({"href": expansion["final_url"], "visible_text": "Expanded short URL"})
+        parsed["url_expansions"] = expansions
+
         url_result = (
             URLAnalyzer.analyze_references(
                 references
@@ -696,12 +732,30 @@ class AnalysisOrchestrator:
             }
         )
 
-        findings.extend(
-            url_result.get(
-                "findings",
-                []
+        sender_domain = str(verified.get("dmarc", {}).get("from_domain", "")).lower().rstrip(".")
+        def aligned_first_party(item):
+            registered = str(item.get("registered_domain", "")).lower().rstrip(".")
+            return verified.get("dmarc", {}).get("status") == "pass" and bool(registered) and (
+                sender_domain == registered or sender_domain.endswith("." + registered)
             )
-        )
+        for item in url_result.get("findings", []):
+            item = dict(item)
+            if aligned_first_party(item.get("evidence", {})):
+                item["severity"] = "info"
+                item.setdefault("limitations", []).append("The URL is first-party aligned with an independently authenticated sender; heuristic structure alone is insufficient for a threat verdict.")
+            findings.append(item)
+        from backend.intelligence.reputation_provider import URLReputationProvider
+        reputation = URLReputationProvider().lookup([str(item.get("href", "")) for item in references])
+        parsed["url_reputation"] = reputation
+        findings.extend(reputation.get("findings", []))
+        suspicious_urls = [item for item in url_result.get("urls", []) if int(item.get("risk_score", 0)) >= 35 and not aligned_first_party(item)]
+        if credentials and suspicious_urls:
+            findings.append(self._finding(
+                "Text", "credential_request_with_suspicious_link", "high", 0.9,
+                "Credential request includes a suspicious link",
+                "Credential-related language is paired with a URL that has independent suspicious characteristics.",
+                {"suspicious_url_count": len(suspicious_urls), "credential_cues": credentials[:5]},
+            ))
 
         # ==============================================================
         # 9. ATTACHMENT ANALYSIS
@@ -716,12 +770,20 @@ class AnalysisOrchestrator:
             )
         )
 
-        findings.extend(
-            attachment_result.get(
-                "findings",
-                [],
-            )
-        )
+        parsed["attachment_analysis"] = attachment_result
+        for attachment in attachment_result.get("attachments", []):
+            score = int(attachment.get("score", 0))
+            if score < 35:
+                continue
+            severity = "critical" if score >= 75 else "high" if score >= 50 else "medium"
+            findings.append(Finding(
+                category="Attachment", rule="attachment_static_" + severity,
+                severity=severity, confidence=0.95,
+                title="Potentially dangerous attachment",
+                description="; ".join(attachment.get("reasons", [])),
+                evidence={key: attachment.get(key) for key in ("filename", "sha256", "magic_signature", "score", "analysis_skipped")},
+                limitations=["Static inspection identifies risky file properties; it does not establish malicious execution."]
+            ))
 
         # ==============================================================
         # 10. ORIGIN TRACE
@@ -781,7 +843,7 @@ class AnalysisOrchestrator:
         )
 
         if metadata_domain:
-            origin_domains.append(
+            origin_domains.insert(0,
                 {
                     "domain": metadata_domain,
                     "source": "from",
@@ -790,7 +852,14 @@ class AnalysisOrchestrator:
 
         domain_results = []
 
+        seen_domains = set()
         for item in origin_domains:
+            normalized_domain = item["domain"].lower().rstrip(".")
+            if normalized_domain in seen_domains:
+                continue
+            if len(seen_domains) >= 8:
+                break
+            seen_domains.add(normalized_domain)
             result = (
                 self.domain_provider.inspect(
                     item["domain"],
@@ -818,6 +887,8 @@ class AnalysisOrchestrator:
 
         parsed["domain_intelligence"] = {
             "domains": domain_results,
+            "domain_limit": 8,
+            "limited": len({item["domain"].lower().rstrip(".") for item in origin_domains}) > 8,
             "limitations": [
                 (
                     "DNS data is time-dependent and does "
@@ -965,6 +1036,10 @@ class AnalysisOrchestrator:
             ),
         ]
 
+        skipped = sum(bool(item.get("analysis_skipped")) for item in parsed.get("attachments", []))
+        if skipped:
+            limitations.append(f"Content inspection was unavailable for {skipped} attachment(s); the verdict does not establish their safety.")
+
         # ==============================================================
         # 18. EVIDENCE RECORD
         # ==============================================================
@@ -985,11 +1060,31 @@ class AnalysisOrchestrator:
         sanitized = dict(
             parsed
         )
-
         sanitized.pop(
             "raw_bytes",
             None,
         )
+        for item in sanitized.get("attachments", []):
+            image = item.get("image_analysis") or {}
+            ocr_text = image.pop("ocr_text", "")
+            if ocr_text:
+                image["ocr_text_sha256"] = hashlib.sha256(ocr_text.encode("utf-8")).hexdigest()
+                image["ocr_character_count"] = len(ocr_text)
+        # Persist ML availability separately from heuristic evidence. An
+        # unevaluated model must not silently increase the blocking score.
+        from backend.ml_classifier import LocalMLClassifier
+        try:
+            sanitized["ml_analysis"] = {"available": True, **LocalMLClassifier.predict(text)}
+        except Exception:
+            sanitized["ml_analysis"] = {
+                "available": False,
+                "classification": "UNAVAILABLE",
+                "limitations": ["An evaluated email model must be provisioned. Heuristic analysis remains available."]
+            }
+
+        # Raw originals remain in evidence storage, not in routine API results.
+        from backend.compliance import IndiaPrivacyPreserver
+        sanitized["body"] = IndiaPrivacyPreserver.redact_structure(sanitized.get("body") or {})
 
         # ==============================================================
         # 20. FINAL V2 RESULT

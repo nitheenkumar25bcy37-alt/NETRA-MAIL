@@ -4,15 +4,15 @@ Subject: Password Reset Confirmation
 Date: Tue, 08 Sep 2026 10:00:00 +0000
 MIME-Version: 1.0
 Content-Type: multipart/alternative;
- boundary="===============0242784522983689626=="
+ boundary="===============6204677373707513262=="
 
---===============0242784522983689626==
+--===============6204677373707513262==
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
 
 Click to reset your password: http://fake-bank-secure.com/reset?token=abc123
 
---===============0242784522983689626==
+--===============6204677373707513262==
 Content-Type: text/html; charset="utf-8"
 Content-Transfer-Encoding: quoted-printable
 MIME-Version: 1.0
@@ -20,4 +20,4 @@ MIME-Version: 1.0
 <a href=3D"http://fake-bank-secure.com/reset?token=3Dabc123">Click here to re=
 set</a>
 
---===============0242784522983689626==--
+--===============6204677373707513262==--

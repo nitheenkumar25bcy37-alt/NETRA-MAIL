@@ -5,20 +5,20 @@ Date: Tue, 08 Sep 2026 10:00:00 +0000
 Authentication-Results: example; spf=pass; dkim=pass
 MIME-Version: 1.0
 Content-Type: multipart/alternative;
- boundary="===============3213695923738136487=="
+ boundary="===============0163818762494944753=="
 
---===============3213695923738136487==
+--===============0163818762494944753==
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: quoted-printable
 
 Congratulations! Your item sold. The buyer has 3 days to pay. https://ebay.co=
 m/my/sales
 
---===============3213695923738136487==
+--===============0163818762494944753==
 Content-Type: text/html; charset="utf-8"
 Content-Transfer-Encoding: 7bit
 MIME-Version: 1.0
 
 <a href="https://ebay.com/my/sales">Check your earnings</a>
 
---===============3213695923738136487==--
+--===============0163818762494944753==--

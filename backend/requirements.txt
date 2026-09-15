@@ -1,4 +1,9 @@
 fastapi>=0.115,<1
+dkimpy==1.1.8
+cryptography==50.0.1
+pyspf==2.0.14
+opencv-python-headless>=4.10,<6
+rapidocr-onnxruntime==1.2.3
 uvicorn[standard]>=0.34,<1
 python-multipart>=0.0.20,<1
 pydantic>=2.10,<3

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import secrets
 import time
 from collections import OrderedDict, deque
 from threading import Lock
@@ -139,6 +140,11 @@ def validate_identifier(
         raise ValueError(f"Invalid {name}")
 
     return value
+
+
+def valid_api_key(candidate: str | None, expected: str | None) -> bool:
+    """Compare a deployment access key in constant time."""
+    return bool(candidate and expected and secrets.compare_digest(candidate, expected))
 
 
 # ---------------------------------------------------------------------------

@@ -3,15 +3,15 @@ To: test-user@example.com
 Subject: Invoice #2026-001
 Date: Tue, 08 Sep 2026 10:00:00 +0000
 MIME-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============0708644067725523325=="
+Content-Type: multipart/mixed; boundary="===============5705579637770715637=="
 
---===============0708644067725523325==
+--===============5705579637770715637==
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
 
 Please see attached invoice.
 
---===============0708644067725523325==
+--===============5705579637770715637==
 Content-Type: application/octet-stream
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="invoice.exe"
@@ -19,4 +19,4 @@ MIME-Version: 1.0
 
 TVogc3ludGhldGljIHRlc3QgYXR0YWNobWVudAo=
 
---===============0708644067725523325==--
+--===============5705579637770715637==--

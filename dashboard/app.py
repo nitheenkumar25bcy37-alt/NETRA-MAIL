@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 import sys
 from typing import Any, Dict
 
@@ -82,6 +83,11 @@ def render_email(email_id: str):
     c3.metric("Analysis version", result.get("evidence", {}).get("analysis_version", "Unknown"))
     tabs = st.tabs(["Findings", "Origin trace", "Relationships", "Limitations"])
     with tabs[0]:
+        parsed = result.get("parsed", {})
+        st.subheader("Authentication evidence")
+        st.json(parsed.get("verified_authentication", {"status": "unavailable"}))
+        with st.expander("Reported authentication and model availability"):
+            st.json({"reported": parsed.get("reported_authentication", {}), "model": parsed.get("ml_analysis", {})})
         if findings_error:
             st.error(findings_error)
         elif not findings.get("findings"):
@@ -99,9 +105,47 @@ def render_email(email_id: str):
             st.subheader("Origin candidates")
             for candidate in trace.get("origin_candidates", []):
                 st.write(f"`{candidate.get('ip')}` · confidence `{float(candidate.get('confidence', 0)):.0%}` · {', '.join(candidate.get('basis', []))}")
+            map_points = []
+            for candidate in trace.get("origin_candidates", []):
+                ip = str(candidate.get("ip") or "")
+                if not ip:
+                    continue
+                intel, intel_error = safe_call(client.ip_intelligence, ip)
+                if intel_error or not intel or not intel.get("available"):
+                    continue
+                st.caption(
+                    f"Registered network: {intel.get('city') or 'Unknown'}, "
+                    f"{intel.get('region') or intel.get('country') or 'Unknown'} | "
+                    f"ASN: {intel.get('asn') or 'Unknown'} | "
+                    f"Provider: {intel.get('organization') or intel.get('isp') or 'Unknown'}"
+                )
+                try:
+                    latitude = float(intel.get("latitude"))
+                    longitude = float(intel.get("longitude"))
+                    if latitude or longitude:
+                        map_points.append({"lat": latitude, "lon": longitude, "ip": ip})
+                except (TypeError, ValueError):
+                    pass
+            if map_points:
+                st.subheader("Origin infrastructure map")
+                st.map(map_points, latitude="lat", longitude="lon", size=120)
             st.info("Geolocation is infrastructure intelligence and does not prove the sender's physical location.")
             st.json({"limitations": trace.get("limitations", [])})
     with tabs[2]:
+        graph, graph_error = safe_call(client.graph, email_id)
+        if graph and not graph_error:
+            import json
+            lines = ["digraph investigation {", "rankdir=LR;"]
+            for node in graph.get("nodes", []):
+                lines.append(f'{json.dumps(node["id"])} [label={json.dumps(node.get("label", node["id"]))}];')
+            for edge in graph.get("edges", []):
+                lines.append(f'{json.dumps(edge["source"])} -> {json.dumps(edge["target"])} [label={json.dumps(edge["type"])}];')
+            lines.append("}")
+            try:
+                st.graphviz_chart("\n".join(lines))
+            except ImportError:
+                st.dataframe(graph.get("edges", []), use_container_width=True)
+            st.caption("Relationships are investigative hypotheses; shared infrastructure does not establish human identity.")
         if relation_error:
             st.error(relation_error)
         elif not relationships.get("relationships"):
@@ -211,6 +255,22 @@ def render_reports():
 
 
 def main():
+    requested_email_id = str(st.query_params.get("email_id", ""))
+    if requested_email_id:
+        if not re.fullmatch(
+            r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-"
+            r"[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}",
+            requested_email_id,
+        ):
+            st.error("The requested email investigation ID is invalid.")
+            return
+        st.sidebar.caption(f"API: {client.base_url}")
+        st.sidebar.info("Opened from the Gmail risk badge")
+        if st.sidebar.button("Back to overview"):
+            st.query_params.clear()
+            st.rerun()
+        render_email(requested_email_id)
+        return
     page = st.sidebar.radio("Navigate", ["Overview", "Email analysis", "Campaigns", "Cases", "Reports"])
     st.sidebar.caption(f"API: {client.base_url}")
     if page == "Overview":

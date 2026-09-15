@@ -5,6 +5,8 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
+from backend.audit_context import current_actor
+from backend.config import MAX_EVIDENCE_SIZE_BYTES
 
 try:
     from reportlab.lib.pagesizes import letter
@@ -46,7 +48,7 @@ class ReportService:
             "format": output_format,
             "created_at": now,
             "evidence_count": len(evidence),
-            "integrity_verified": (bool(integrity) and all(item["match"] for item in integrity)) or not evidence,
+            "integrity_verified": bool(integrity) and all(item["match"] for item in integrity),
             "observed_evidence": {"case": case, "emails": email_sections},
             "campaign_relationships": relationships,
             "evidence_inventory": evidence,
@@ -62,12 +64,13 @@ class ReportService:
         relative = Path("reports") / f"{report_id}.{output_format}"
         destination = self.storage_dir / relative
         destination.parent.mkdir(parents=True, exist_ok=True)
-        destination.write_bytes(payload)
+        self.evidence.storage.write(relative, payload)
         report["download_reference"] = str(relative).replace("\\", "/")
         self.db.create_report(report)
-        self.db.add_case_timeline({"event_id": "event_" + uuid4().hex[:12], "case_id": case_id, "event_type": "report_generated", "description": f"Report {report_id} was generated.", "actor": "system", "evidence_refs": [item["evidence_id"] for item in evidence], "created_at": now})
+        self.db.add_case_timeline({"event_id": "event_" + uuid4().hex[:12], "case_id": case_id, "event_type": "report_generated", "description": f"Report {report_id} was generated.", "actor": current_actor(), "evidence_refs": [item["evidence_id"] for item in evidence], "created_at": now})
         for item in evidence:
-            self.db.add_custody({"custody_event_id": "custody_" + uuid4().hex[:12], "evidence_id": item["evidence_id"], "case_id": case_id, "event_type": "evidence_reported", "timestamp": now, "actor": "system", "description": f"Evidence was included in report {report_id}.", "sha256_before": item["sha256"], "sha256_after": item["sha256"], "integrity_verified": True, "metadata": {"report_id": report_id}})
+            verified = next((check["match"] for check in integrity if check["evidence_id"] == item["evidence_id"]), False)
+            self.db.add_custody({"custody_event_id": "custody_" + uuid4().hex[:12], "evidence_id": item["evidence_id"], "case_id": case_id, "event_type": "evidence_reported", "timestamp": now, "actor": current_actor(), "description": f"Evidence was included in report {report_id}.", "sha256_before": item["sha256"], "sha256_after": item["sha256"], "integrity_verified": verified, "metadata": {"report_id": report_id}})
         return report
 
     @staticmethod
@@ -99,6 +102,14 @@ class ReportService:
 
     def get(self, report_id: str):
         return self.db.get_report(report_id)
+
+    def download(self, report_id):
+        report = self.get(report_id)
+        if not report:
+            raise KeyError("Report was not found")
+        raw = self.evidence.storage.read(report["download_reference"], MAX_EVIDENCE_SIZE_BYTES)
+        self.db.add_case_timeline({"event_id": "event_" + uuid4().hex[:12], "case_id": report["case_id"], "event_type": "report_downloaded", "description": f"Report {report_id} was downloaded.", "actor": current_actor(), "evidence_refs": [], "created_at": datetime.now(timezone.utc).isoformat()})
+        return raw
 
     def list_for_case(self, case_id: str):
         return self.db.list_reports(case_id)

@@ -16,6 +16,10 @@ venv/
 # Environment secrets
 .env
 .env.*
+credentials.json
+client_secret*.json
+token.json
+.local-secrets/
 
 # Local databases
 *.db

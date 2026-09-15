@@ -3,7 +3,47 @@
 // Background Service Worker
 // ============================================================
 
-const API_BASE_URL = "http://127.0.0.1:8000";
+importScripts("connection.js");
+
+async function apiBaseURL() {
+    const stored = await chrome.storage.local.get("netraApiOrigin");
+    return netraOrigin(stored.netraApiOrigin || "http://127.0.0.1:8000");
+}
+
+async function dashboardBaseURL() {
+    const stored = await chrome.storage.local.get("netraDashboardOrigin");
+    return netraOrigin(stored.netraDashboardOrigin || "http://127.0.0.1:8501");
+}
+
+async function dashboardReportURL(emailId) {
+    const identifier = String(emailId || "");
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(identifier)) {
+        return "";
+    }
+    const url = new URL(await dashboardBaseURL());
+    url.searchParams.set("email_id", identifier);
+    return url.toString();
+}
+
+// Session storage is restricted to extension contexts; never return credentials
+// to content scripts or persist them in synchronized browser storage.
+async function authenticatedHeaders(origin) {
+    const stored = await chrome.storage.session.get("netraApiKey");
+    return {
+        "Content-Type": "application/json",
+        ...(stored.netraApiKey && stored.netraApiKeyOrigin === origin ? {"X-NETRA-API-Key": stored.netraApiKey} : {})
+    };
+}
+
+async function checkIdentity() {
+    const API_BASE_URL = await apiBaseURL();
+    const response = await fetch(API_BASE_URL + "/api/v2/me", {
+        headers: await authenticatedHeaders(API_BASE_URL), cache: "no-store",
+        credentials: "omit", redirect: "error", signal: AbortSignal.timeout(10000)
+    });
+    if (!response.ok) throw new Error("Backend authentication failed (HTTP " + response.status + ").");
+    return response.json();
+}
 
 
 // ============================================================
@@ -12,11 +52,15 @@ const API_BASE_URL = "http://127.0.0.1:8000";
 
 async function checkBackendHealth() {
     try {
+        const API_BASE_URL = await apiBaseURL();
         const response = await fetch(
             `${API_BASE_URL}/health`,
             {
                 method: "GET",
-                cache: "no-store"
+                cache: "no-store",
+                signal: AbortSignal.timeout(10000),
+                redirect: "error",
+                credentials: "omit"
             }
         );
 
@@ -55,6 +99,7 @@ async function checkBackendHealth() {
 // ============================================================
 
 async function analyzeEmail(email) {
+    const API_BASE_URL = await apiBaseURL();
 
     if (!email || typeof email !== "object") {
         throw new Error("Invalid email payload.");
@@ -91,13 +136,14 @@ async function analyzeEmail(email) {
         {
             method: "POST",
 
-            headers: {
-                "Content-Type": "application/json"
-            },
+            headers: await authenticatedHeaders(API_BASE_URL),
 
             body: JSON.stringify(payload),
 
-            cache: "no-store"
+            cache: "no-store",
+            signal: AbortSignal.timeout(45000),
+            redirect: "error",
+            credentials: "omit"
         }
     );
 
@@ -135,6 +181,7 @@ async function analyzeEmail(email) {
     }
 
 
+    data.dashboard_url = await dashboardReportURL(data.email_id);
     return data;
 }
 
@@ -146,8 +193,18 @@ async function analyzeEmail(email) {
 chrome.runtime.onMessage.addListener(
     (message, sender, sendResponse) => {
 
+        if (sender.id !== chrome.runtime.id) {
+            return false;
+        }
+
         if (!message || !message.type) {
             return;
+        }
+        if (message.type === "NETRA_CONNECTION") {
+            checkIdentity()
+                .then(identity => sendResponse({success: true, identity}))
+                .catch(error => sendResponse({success: false, error: error.message}));
+            return true;
         }
 
 

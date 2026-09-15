@@ -214,6 +214,16 @@ class ForensicLedgerDB:
                 CREATE INDEX IF NOT EXISTS idx_evidence_hash ON evidence(sha256);
                 CREATE INDEX IF NOT EXISTS idx_custody_evidence_time ON chain_of_custody(evidence_id, timestamp);
                 CREATE INDEX IF NOT EXISTS idx_reports_case ON reports(case_id);
+                CREATE TABLE IF NOT EXISTS storage_blobs (
+                    reference TEXT PRIMARY KEY,
+                    key_id TEXT,
+                    sha256 TEXT NOT NULL,
+                    size_bytes INTEGER NOT NULL
+                );
+                CREATE TABLE IF NOT EXISTS analysis_owners (
+                    email_id TEXT PRIMARY KEY,
+                    subject TEXT NOT NULL
+                );
                 """
             )
 
@@ -227,6 +237,26 @@ class ForensicLedgerDB:
                 (email_id, datetime.now(timezone.utc).isoformat(), sha256, payload),
             )
             conn.commit()
+
+    def record_storage_blob(self, reference, key_id, sha256, size_bytes):
+        with self._connect() as conn:
+            conn.execute("INSERT INTO storage_blobs (reference, key_id, sha256, size_bytes) VALUES (?, ?, ?, ?)", (reference, key_id, sha256, size_bytes))
+            conn.commit()
+
+    def set_analysis_owner(self, email_id, subject):
+        with self._connect() as conn:
+            conn.execute("INSERT INTO analysis_owners (email_id, subject) VALUES (?, ?)", (email_id, subject))
+            conn.commit()
+
+    def analysis_owner(self, email_id):
+        with self._connect() as conn:
+            row = conn.execute("SELECT subject FROM analysis_owners WHERE email_id=?", (email_id,)).fetchone()
+        return row[0] if row else None
+
+    def get_storage_blob(self, reference):
+        with self._connect() as conn:
+            row = conn.execute("SELECT key_id, sha256, size_bytes FROM storage_blobs WHERE reference=?", (reference,)).fetchone()
+        return {"key_id": row[0], "sha256": row[1], "size_bytes": row[2]} if row else None
 
     def get_v2_analysis(self, email_id: str) -> Optional[Dict[str, Any]]:
         with self._connect() as conn:
@@ -526,38 +556,23 @@ class ForensicLedgerDB:
             ).isoformat()
         )
 
-        previous_hash = (
-            self.get_latest_hash()
-        )
-
         payload_json = json.dumps(
-            forensic_data,
+            {**forensic_data, "_ledger_integrity": {"version": 2, "verdict": verdict}},
             sort_keys=True,
             ensure_ascii=False,
-        )
-
-        hasher = hashlib.sha256()
-
-        hasher.update(
-            (
-                f"{case_id}"
-                f"{timestamp}"
-                f"{raw_sha256}"
-                f"{int(threat_score)}"
-                f"{payload_json}"
-                f"{previous_hash}"
-            ).encode(
-                "utf-8"
-            )
-        )
-
-        current_hash = (
-            hasher.hexdigest()
         )
 
         with self._connect() as conn:
 
             cursor = conn.cursor()
+            # Serialize reading the chain head and appending its successor
+            # across processes, not just within one Python thread.
+            cursor.execute("BEGIN IMMEDIATE")
+            row = cursor.execute("SELECT block_hash FROM evidence_ledger ORDER BY id DESC LIMIT 1").fetchone()
+            previous_hash = row[0] if row else GENESIS_HASH
+            current_hash = hashlib.sha256(
+                f"{case_id}{timestamp}{raw_sha256}{int(threat_score)}{payload_json}{previous_hash}".encode("utf-8")
+            ).hexdigest()
 
             cursor.execute(
                 """
@@ -706,7 +721,8 @@ class ForensicLedgerDB:
                     threat_score,
                     forensic_payload,
                     previous_hash,
-                    block_hash
+                    block_hash,
+                    verdict
                 FROM evidence_ledger
                 ORDER BY id ASC
                 """
@@ -744,7 +760,15 @@ class ForensicLedgerDB:
                 payload,
                 previous_hash,
                 stored_hash,
+                stored_verdict,
             ) = row
+
+            try:
+                seal = json.loads(payload).get("_ledger_integrity", {})
+            except (ValueError, AttributeError):
+                return {"status": "TAMPERED", "valid": False, "failed_at_id": record_id, "reason": "Invalid ledger payload"}
+            if seal.get("version") == 2 and seal.get("verdict") != stored_verdict:
+                return {"status": "TAMPERED", "valid": False, "failed_at_id": record_id, "reason": "Verdict modified"}
 
             if previous_hash != expected_previous:
 

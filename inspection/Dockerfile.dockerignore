@@ -1,0 +1,10 @@
+**
+!backend/
+!backend/__init__.py
+!backend/attachment_analyzer.py
+!backend/image_analyzer.py
+!backend/inspection_worker.py
+!backend/controlled_fetch.py
+!inspection/
+!inspection/requirements.txt
+!inspection/Dockerfile

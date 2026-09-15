@@ -58,6 +58,16 @@ class IndiaPrivacyPreserver:
         return redacted
 
     @classmethod
+    def redact_structure(cls, value):
+        if isinstance(value, str):
+            return cls.redact_text(value)
+        if isinstance(value, list):
+            return [cls.redact_structure(item) for item in value]
+        if isinstance(value, dict):
+            return {key: cls.redact_structure(item) for key, item in value.items()}
+        return value
+
+    @classmethod
     def sanitize_payload(cls, parsed_email: Dict[str, Any]) -> Dict[str, Any]:
         """Deep-copy and sanitize analyst/LLM-facing data without altering evidence."""
         clean = copy.deepcopy(parsed_email)

@@ -70,6 +70,8 @@ class URLAnalyzer:
         "Google": [
             "google.com",
             "gmail.com",
+            "googleapis.com",
+            "gstatic.com",
         ],
         "Apple": [
             "apple.com",
@@ -1062,7 +1064,7 @@ class URLAnalyzer:
         # @ userinfo trick
         # --------------------------------------------------------
 
-        if parsed.username or "@" in url_text:
+        if parsed.username:
 
             result["userinfo_present"] = True
 

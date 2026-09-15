@@ -5,9 +5,9 @@ Date: Tue, 08 Sep 2026 10:00:00 +0000
 Authentication-Results: example; spf=pass; dkim=pass
 MIME-Version: 1.0
 Content-Type: multipart/alternative;
- boundary="===============0937206297045134369=="
+ boundary="===============5471278838384166257=="
 
---===============0937206297045134369==
+--===============5471278838384166257==
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: quoted-printable
 
@@ -15,11 +15,11 @@ All staff, critical security updates are scheduled tonight. Please do not use=
  the VPN between 10 PM and 2 AM. Contact IT: https://company.internal/it-supp=
 ort
 
---===============0937206297045134369==
+--===============5471278838384166257==
 Content-Type: text/html; charset="utf-8"
 Content-Transfer-Encoding: 7bit
 MIME-Version: 1.0
 
 <a href="https://company.internal/it-support">Contact IT</a>
 
---===============0937206297045134369==--
+--===============5471278838384166257==--

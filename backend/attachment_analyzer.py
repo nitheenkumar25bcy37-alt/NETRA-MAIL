@@ -77,6 +77,7 @@ class AttachmentAnalyzer:
         reasons: List[str] = []
         urls: List[str] = []
         encrypted = False
+        remaining_bytes = 2 * 1024 * 1024
         try:
             with zipfile.ZipFile(io.BytesIO(data)) as zf:
                 infos = zf.infolist()
@@ -94,9 +95,18 @@ class AttachmentAnalyzer:
                     elif ext in cls.HIGH_EXTENSIONS:
                         reasons.append(f"Archive contains high-risk document/web member: {name}")
                     members.append(item)
-                    if not info.is_dir() and info.file_size <= 512 * 1024:
+                    oversized = info.file_size > remaining_bytes or info.file_size > 512 * 1024
+                    high_ratio = info.file_size > max(info.compress_size, 1) * 100
+                    if oversized or high_ratio:
+                        reasons.append("Archive content inspection limited by decompression size or compression-ratio budget.")
+                    if not info.is_dir() and not is_enc and not oversized and not high_ratio:
                         try:
-                            content = zf.read(info)
+                            with zf.open(info) as member:
+                                content = member.read(min(remaining_bytes, 512 * 1024) + 1)
+                            remaining_bytes -= len(content)
+                            if len(content) > 512 * 1024 or remaining_bytes < 0:
+                                reasons.append("Archive content exceeded the decompression budget.")
+                                continue
                             urls.extend(re.findall(r"https?://[^\s<>\"']+", content.decode("utf-8", errors="ignore"))[:20])
                         except Exception:
                             pass
@@ -190,6 +200,12 @@ class AttachmentAnalyzer:
 
         if not data and item.get("analysis_skipped"):
             reasons.append(str(item.get("skip_reason") or "Attachment content was not available for static inspection."))
+        image_analysis = item.get("image_analysis") or {}
+        qr_payloads = image_analysis.get("qr_payloads", [])[:20]
+        if qr_payloads:
+            reasons.append("Image contains a QR code; decoded targets were inspected as URLs when applicable.")
+            score = max(score, 25)
+            severity = "MEDIUM" if severity == "LOW" else severity
 
         sha256 = item.get("sha256") or (hashlib.sha256(data).hexdigest() if data else None)
         entropy = cls._entropy(data[:2 * 1024 * 1024]) if data else 0.0
@@ -216,6 +232,9 @@ class AttachmentAnalyzer:
             "encrypted_archive": encrypted,
             "archive_members": archive_members,
             "embedded_urls": embedded_urls,
+            "image_analysis": {"available": bool(image_analysis.get("available")), "qr_payloads": qr_payloads,
+                "ocr_text_present": bool(image_analysis.get("ocr_text")), "ocr_available": bool(image_analysis.get("ocr_available")),
+                "limitations": image_analysis.get("limitations", [])},
             "reasons": list(dict.fromkeys(reasons)),
             "score": min(100, score),
             "risk_level": severity,
@@ -226,7 +245,28 @@ class AttachmentAnalyzer:
     @classmethod
     def analyze(cls, attachments: List[Dict[str, Any]] | None) -> Dict[str, Any]:
         attachments = attachments or []
-        findings = [cls._analyze_one(x if isinstance(x, dict) else {}) for x in attachments]
+        findings = []
+        for item in attachments:
+            item = item if isinstance(item, dict) else {}
+            # Parsed attachments already carry worker output; do not inspect twice.
+            if isinstance(item.get("static_analysis"), dict):
+                findings.append(item["static_analysis"])
+                continue
+            data = item.get("content") or item.get("payload")
+            if data:
+                from backend.inspection_client import inspect_attachment
+                if isinstance(data, str):
+                    data = data.encode("utf-8", errors="ignore")
+                inspected = inspect_attachment(data, item.get("filename", item.get("name", "")),
+                    item.get("content_type", item.get("mime_type", "application/octet-stream")))
+                if inspected.get("available") and isinstance(inspected.get("static_analysis"), dict):
+                    findings.append(inspected["static_analysis"])
+                    continue
+                item = {k: v for k, v in item.items() if k not in {"content", "payload"}}
+                item.update(analysis_skipped=True, skip_reason=inspected.get("error", "inspection_unavailable"))
+            # Metadata-only fallback preserves filename/magic findings and marks
+            # missing content inspection explicitly; it never decodes a file.
+            findings.append(cls._analyze_one(item))
         highest = max((x["score"] for x in findings), default=0)
         suspicious = sum(1 for x in findings if x["suspicious"])
         reasons = []
