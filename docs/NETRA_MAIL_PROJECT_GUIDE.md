@@ -224,14 +224,14 @@ The project includes controls for local and hosted operation:
 - explicit browser-origin allowlists;
 - API identities stored as SHA-256 token digests;
 - admin, analyst, auditor and submitter roles;
-- session-scoped extension credentials;
+- local-profile extension credentials that persist across browser restarts;
 - request-size and rate limits;
 - PII masking for applicable analysis paths;
 - optional encrypted evidence storage;
 - controlled provider disclosure;
 - fail-closed hosted deployment checks.
 
-The extension access key is stored for the browser session and must be entered again on another computer or after the browser session ends.
+The deployed API and dashboard addresses are configured automatically and Email Protection starts enabled. The extension access key is entered once per Chrome profile and remains available across browser restarts without being synchronized to other computers.
 
 ---
 
@@ -382,9 +382,9 @@ Yes, through static and bounded inspection. It does not execute suspicious progr
 
 Yes. Cases and investigations can produce JSON, HTML and PDF reports with supporting findings and evidence records.
 
-### Why does another computer need the access key again?
+### Why does another computer need the access key once?
 
-The key is deliberately stored only in the browser session. Each computer and new browser session must be configured with the trusted backend URL and an authorized extension key.
+The key is deliberately stored only in the local Chrome profile and is never committed to Git or synchronized. Each computer needs the authorized extension key once; subsequent browser sessions reconnect automatically.
 
 ---
 
@@ -405,4 +405,3 @@ The key is deliberately stored only in the browser session. Each computer and ne
 - SPF standard: <https://www.rfc-editor.org/info/rfc7208/>
 - DMARC standard: <https://www.rfc-editor.org/info/rfc7489/>
 - Digital-forensics guidance: <https://csrc.nist.gov/pubs/sp/800/86/final>
-

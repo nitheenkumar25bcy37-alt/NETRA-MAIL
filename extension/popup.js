@@ -20,10 +20,10 @@ const statusDot =
 const analyzeButton = document.getElementById("analyzeButton");
 const result = document.getElementById("result");
 chrome.storage.local.get("netraApiOrigin").then(stored => {
-    document.getElementById("apiOrigin").value = stored.netraApiOrigin || "http://127.0.0.1:8000";
+    document.getElementById("apiOrigin").value = stored.netraApiOrigin || NETRA_DEFAULT_API_ORIGIN;
 });
 chrome.storage.local.get("netraDashboardOrigin").then(stored => {
-    document.getElementById("dashboardOrigin").value = stored.netraDashboardOrigin || "http://127.0.0.1:8501";
+    document.getElementById("dashboardOrigin").value = stored.netraDashboardOrigin || NETRA_DEFAULT_DASHBOARD_ORIGIN;
 });
 
 document.getElementById("saveApiKey").addEventListener("click", async () => {
@@ -34,9 +34,12 @@ document.getElementById("saveApiKey").addEventListener("click", async () => {
         if (origin.startsWith("https:") && !await chrome.permissions.request({origins: [origin + "/*"]})) {
             throw new Error("Server access was not granted.");
         }
-        await chrome.storage.session.set({netraApiKey: input.value.trim(), netraApiKeyOrigin: origin});
-        await chrome.storage.local.set({netraApiOrigin: origin});
-        await chrome.storage.local.set({netraDashboardOrigin: dashboardOrigin});
+        await chrome.storage.local.set({
+            netraApiKey: input.value.trim(),
+            netraApiKeyOrigin: origin,
+            netraApiOrigin: origin,
+            netraDashboardOrigin: dashboardOrigin
+        });
         input.value = "";
         const connection = await chrome.runtime.sendMessage({type: "NETRA_CONNECTION"});
         if (!connection || !connection.success) {
@@ -99,8 +102,11 @@ chrome.storage.local.get(
     (result) => {
 
         updateUI(
-            result.netraProtectionEnabled === true
+            result.netraProtectionEnabled !== false
         );
+        if (typeof result.netraProtectionEnabled !== "boolean") {
+            chrome.storage.local.set({netraProtectionEnabled: true});
+        }
     }
 );
 
@@ -138,7 +144,7 @@ analyzeButton.addEventListener("click", async () => {
     analyzeButton.disabled = true;
     try {
         const settings = await chrome.storage.local.get("netraProtectionEnabled");
-        if (settings.netraProtectionEnabled !== true) {
+        if (settings.netraProtectionEnabled === false) {
             throw new Error("Turn on Email Protection, then select Analyze current email.");
         }
         const [tab] = await chrome.tabs.query({active: true, currentWindow: true});

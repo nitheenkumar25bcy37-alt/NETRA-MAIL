@@ -23,7 +23,11 @@ function loadProtectionState() {
         (result) => {
 
             protectionEnabled =
-                result.netraProtectionEnabled === true;
+                result.netraProtectionEnabled !== false;
+
+            if (typeof result.netraProtectionEnabled !== "boolean") {
+                chrome.storage.local.set({netraProtectionEnabled: true});
+            }
 
 
             if (!protectionEnabled) {

@@ -12,11 +12,11 @@ test("manifest pins the same extension ID on every computer", () => {
     assert.equal(extensionId, "knckclcnbppcnhinmehnpajloflmjcgm");
 });
 
-test("extension sends session credentials with bounded, non-redirecting requests", async () => {
+test("extension uses persistent local credentials with bounded, non-redirecting requests", async () => {
     let request;
     const context = vm.createContext({
         chrome: {
-            storage: {local: {get: async () => ({})}, session: {get: async () => ({netraApiKey: "session-token", netraApiKeyOrigin: "http://127.0.0.1:8000"})}},
+            storage: {local: {get: async () => ({netraApiKey: "saved-token", netraApiKeyOrigin: "https://netra-mail.onrender.com"})}},
             runtime: {id: "test-extension", onMessage: {addListener: () => {}}}
         },
         fetch: async (url, options) => {
@@ -28,11 +28,41 @@ test("extension sends session credentials with bounded, non-redirecting requests
     vm.runInContext(fs.readFileSync(path.join(__dirname, "../extension/connection.js"), "utf8"), context);
     vm.runInContext(fs.readFileSync(path.join(__dirname, "../extension/background.js"), "utf8"), context);
     const result = await vm.runInContext('analyzeEmail({subject: "Test", body: "Meeting tomorrow"})', context);
-    assert.equal(request.options.headers["X-NETRA-API-Key"], "session-token");
+    assert.equal(request.options.headers["X-NETRA-API-Key"], "saved-token");
     assert.equal(request.options.redirect, "error");
     assert.equal(request.options.credentials, "omit");
     assert.ok(request.options.signal);
-    assert.equal(result.dashboard_url, "http://127.0.0.1:8501/?email_id=123e4567-e89b-42d3-a456-426614174000");
+    assert.equal(result.dashboard_url, "https://netra-mail-dashboard.onrender.com/?email_id=123e4567-e89b-42d3-a456-426614174000");
+});
+
+test("extension installation configures hosted services and enables protection", async () => {
+    let installed;
+    let updates;
+    const context = vm.createContext({
+        URL, console, importScripts: () => {},
+        chrome: {
+            storage: {local: {
+                get: async () => ({
+                    netraApiOrigin: "http://127.0.0.1:8000",
+                    netraDashboardOrigin: "http://127.0.0.1:8501"
+                }),
+                set: async values => { updates = values; }
+            }},
+            runtime: {
+                onInstalled: {addListener: listener => { installed = listener; }},
+                onMessage: {addListener: () => {}}
+            }
+        }
+    });
+    for (const name of ["connection.js", "background.js"]) {
+        vm.runInContext(fs.readFileSync(path.join(__dirname, "../extension/" + name), "utf8"), context);
+    }
+    await installed();
+    assert.deepEqual({...updates}, {
+        netraApiOrigin: "https://netra-mail.onrender.com",
+        netraDashboardOrigin: "https://netra-mail-dashboard.onrender.com",
+        netraProtectionEnabled: true
+    });
 });
 
 test("v2 confidence and risk are normalized without classifying unknown as safe", () => {
@@ -66,7 +96,7 @@ test("hosted origins reject plaintext remote servers and URL credentials", () =>
 
 test("changing server never forwards the previous server credential", async () => {
     const context = vm.createContext({URL, console, importScripts: () => {}, chrome: {
-        storage: {session: {get: async () => ({netraApiKey: "secret", netraApiKeyOrigin: "https://old.example"})}},
+        storage: {local: {get: async () => ({netraApiKey: "secret", netraApiKeyOrigin: "https://old.example"})}},
         runtime: {onMessage: {addListener: () => {}}}
     }});
     for (const name of ["connection.js", "background.js"]) vm.runInContext(fs.readFileSync(path.join(__dirname, "../extension/" + name), "utf8"), context);

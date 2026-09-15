@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: netra-mail-api
+    name: netra-mail
     runtime: python
     plan: 1c-2g
     buildCommand: pip install -r requirements.txt

@@ -2,12 +2,12 @@ importScripts("connection.js");
 
 async function apiBaseURL() {
     const stored = await chrome.storage.local.get("netraApiOrigin");
-    return netraOrigin(stored.netraApiOrigin || "http://127.0.0.1:8000");
+    return netraOrigin(stored.netraApiOrigin || NETRA_DEFAULT_API_ORIGIN);
 }
 
 async function dashboardBaseURL() {
     const stored = await chrome.storage.local.get("netraDashboardOrigin");
-    return netraOrigin(stored.netraDashboardOrigin || "http://127.0.0.1:8501");
+    return netraOrigin(stored.netraDashboardOrigin || NETRA_DEFAULT_DASHBOARD_ORIGIN);
 }
 
 async function dashboardReportURL(emailId) {
@@ -20,14 +20,41 @@ async function dashboardReportURL(emailId) {
     return url.toString();
 }
 
-// Session storage is restricted to extension contexts; never return credentials
-// to content scripts or persist them in synchronized browser storage.
+// The submitter credential is stored only in this local extension profile. It
+// is never synchronized or returned to content scripts.
 async function authenticatedHeaders(origin) {
-    const stored = await chrome.storage.session.get("netraApiKey");
+    const stored = await chrome.storage.local.get(["netraApiKey", "netraApiKeyOrigin"]);
     return {
         "Content-Type": "application/json",
         ...(stored.netraApiKey && stored.netraApiKeyOrigin === origin ? {"X-NETRA-API-Key": stored.netraApiKey} : {})
     };
+}
+
+// Fresh installations work without server-address or protection setup. This
+// also migrates the retired Render hostname used during initial deployment.
+if (chrome.runtime.onInstalled && chrome.runtime.onInstalled.addListener) {
+    chrome.runtime.onInstalled.addListener(async () => {
+        const stored = await chrome.storage.local.get([
+            "netraApiOrigin",
+            "netraDashboardOrigin",
+            "netraProtectionEnabled"
+        ]);
+        const updates = {};
+        if (!stored.netraApiOrigin ||
+            ["http://127.0.0.1:8000", "http://localhost:8000", "https://netra-mail-api.onrender.com"].includes(stored.netraApiOrigin)) {
+            updates.netraApiOrigin = NETRA_DEFAULT_API_ORIGIN;
+        }
+        if (!stored.netraDashboardOrigin ||
+            ["http://127.0.0.1:8501", "http://localhost:8501"].includes(stored.netraDashboardOrigin)) {
+            updates.netraDashboardOrigin = NETRA_DEFAULT_DASHBOARD_ORIGIN;
+        }
+        if (typeof stored.netraProtectionEnabled !== "boolean") {
+            updates.netraProtectionEnabled = true;
+        }
+        if (Object.keys(updates).length) {
+            await chrome.storage.local.set(updates);
+        }
+    });
 }
 
 async function checkIdentity() {
