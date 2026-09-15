@@ -1,0 +1,55 @@
+services:
+  - type: web
+    name: netra-mail-api
+    runtime: python
+    plan: 1c-2g
+    buildCommand: pip install -r requirements.txt
+    preDeployCommand: python -m backend.deployment_guard
+    startCommand: python -m uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /ready
+    disk:
+      name: netra-forensic-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8
+      - key: NETRA_DEPLOYMENT_MODE
+        value: hosted
+      - key: NETRA_PUBLIC_ORIGIN
+        sync: false
+      - key: NETRA_EXTENSION_ID
+        value: pnliejhaiikopfliaodpllcbpdopgpbc
+      - key: NETRA_ALLOWED_ORIGINS
+        value: chrome-extension://pnliejhaiikopfliaodpllcbpdopgpbc
+      - key: NETRA_REQUIRE_API_AUTH
+        value: "true"
+      - key: NETRA_API_IDENTITIES
+        sync: false
+      - key: NETRA_REQUIRE_EVIDENCE_ENCRYPTION
+        value: "true"
+      - key: NETRA_EVIDENCE_KEYS_JSON
+        sync: false
+      - key: NETRA_EVIDENCE_ACTIVE_KEY
+        value: render-v1
+      - key: NETRA_DATABASE_PATH
+        value: /var/data/forensic_ledger.db
+      - key: NETRA_EVIDENCE_STORAGE_DIR
+        value: /var/data/evidence
+      - key: NETRA_URL_REPUTATION_ENABLED
+        value: "false"
+
+  - type: web
+    name: netra-mail-dashboard
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements-dashboard.txt
+    startCommand: streamlit run dashboard/app.py --server.address 0.0.0.0 --server.port $PORT --server.headless true
+    healthCheckPath: /_stcore/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8
+      - key: NETRA_API_URL
+        sync: false
+      - key: NETRA_API_ACCESS_KEY
+        sync: false
