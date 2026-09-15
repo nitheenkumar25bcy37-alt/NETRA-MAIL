@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "NETRA-Mail Shield",
-  "version": "3.4.0",
+  "version": "3.4.1",
   "description": "User-requested Gmail email threat analysis powered by NETRA-Mail.",
   "permissions": [
     "storage",
@@ -9,9 +9,12 @@
   ],
   "host_permissions": [
     "http://127.0.0.1:8000/*",
-    "http://localhost:8000/*"
+    "http://localhost:8000/*",
+    "https://netra-mail-api.onrender.com/*"
   ],
-  "optional_host_permissions": ["https://*/*"],
+  "optional_host_permissions": [
+    "https://*/*"
+  ],
   "background": {
     "service_worker": "background.js"
   },
