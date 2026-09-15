@@ -86,6 +86,8 @@ try:
         RATE_LIMIT_MAX_KEYS,
         API_AUTH_REQUIRED,
         API_ACCESS_KEY,
+        ALLOW_EXTENSION_SUBMISSIONS,
+        NETRA_EXTENSION_ORIGIN,
     )
 
     from backend.database import ForensicLedgerDB
@@ -136,6 +138,8 @@ except ImportError:
         RATE_LIMIT_MAX_KEYS,
         API_AUTH_REQUIRED,
         API_ACCESS_KEY,
+        ALLOW_EXTENSION_SUBMISSIONS,
+        NETRA_EXTENSION_ORIGIN,
     )
 
     from database import ForensicLedgerDB
@@ -262,6 +266,15 @@ async def deployment_access_control(request: Request, call_next):
             # Explicitly local mode. Never infer locality from forwarded headers.
             if host in {"127.0.0.1", "::1", "testclient"}:
                 identity = Principal("local-operator", "admin")
+        if (
+            identity is None
+            and ALLOW_EXTENSION_SUBMISSIONS
+            and NETRA_EXTENSION_ORIGIN
+            and origin == NETRA_EXTENSION_ORIGIN
+            and request.method == "POST"
+            and request.url.path == "/api/v2/emails/analyze"
+        ):
+            identity = Principal("gmail-extension", "submitter")
         if identity is None:
             return Response(
                 content='{"detail":"Authentication required"}',

@@ -49,10 +49,12 @@ an identity on the next configuration reload. Expiry is checked on each request.
 If all configured identities are disabled, local-admin fallback remains closed.
 
 Configure NETRA_ALLOWED_ORIGINS and NETRA_EXTENSION_ID for the actual clients.
-The extension popup stores its backend token in the computer's local Chrome profile;
-it persists across browser restarts, is not synchronized, and is never exposed to Gmail page scripts. The dashboard uses
+The packaged extension defaults to the deployed Render backend and dashboard. In
+hosted mode its exact configured Chrome origin may submit selected-message analysis
+without a shared user credential. Other API routes remain role protected. Custom
+backend credentials are stored in the computer's local Chrome profile, are not
+synchronized, and are never exposed to Gmail page scripts. The dashboard uses
 NETRA_API_ACCESS_KEY as its client credential (including an identity token).
-The packaged extension defaults to the deployed Render backend and dashboard.
 
 ## Authentication and models
 

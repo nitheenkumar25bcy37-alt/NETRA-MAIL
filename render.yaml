@@ -24,6 +24,8 @@ services:
         value: chrome-extension://knckclcnbppcnhinmehnpajloflmjcgm
       - key: NETRA_REQUIRE_API_AUTH
         value: "true"
+      - key: NETRA_ALLOW_EXTENSION_SUBMISSIONS
+        value: "true"
       - key: NETRA_API_IDENTITIES
         sync: false
       - key: NETRA_REQUIRE_EVIDENCE_ENCRYPTION

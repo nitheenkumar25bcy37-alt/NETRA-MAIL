@@ -245,6 +245,14 @@ NETRA_EXTENSION_ORIGIN = (
     else ""
 )
 
+# Hosted NETRA deployments accept the extension's narrow analysis endpoint
+# without asking each browser profile for a shared secret. Administrative,
+# investigation, evidence, reporting and dashboard routes remain authenticated.
+ALLOW_EXTENSION_SUBMISSIONS = _env_bool(
+    "NETRA_ALLOW_EXTENSION_SUBMISSIONS",
+    os.getenv("NETRA_DEPLOYMENT_MODE", "local").strip().lower() == "hosted",
+)
+
 ALLOWED_ORIGINS = _env_origins(
     "NETRA_ALLOWED_ORIGINS",
     (

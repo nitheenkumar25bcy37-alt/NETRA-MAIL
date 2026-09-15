@@ -387,7 +387,7 @@
 
         <button class="analyze-button" id="analyzeButton" type="button">Analyze current email</button>
         <details class="info">
-            <summary>Backend authentication</summary>
+            <summary>Advanced connection settings</summary>
             <label for="apiOrigin">NETRA server address</label>
             <input id="apiOrigin" type="url" placeholder="https://netra.example.org" style="width:100%">
             <p>Analyzing sends the visible message to this server. Only use your organization's trusted NETRA server.</p>
@@ -395,8 +395,8 @@
             <input id="apiKey" type="password" autocomplete="off" maxlength="512" style="width:100%">
             <label for="dashboardOrigin">SOC dashboard address</label>
             <input id="dashboardOrigin" type="url" placeholder="http://127.0.0.1:8501" style="width:100%">
-            <button id="saveApiKey" type="button">Connect this Chrome profile</button>
-            <p>The key is saved only in this Chrome profile, is not synchronized, and can be replaced here. Visible-message analysis cannot verify full headers or attachments.</p>
+            <button id="saveApiKey" type="button">Save custom connection</button>
+            <p>The deployed NETRA service connects automatically. These fields are only for a private or custom server. Visible-message analysis cannot verify full headers or attachments.</p>
         </details>
         <div class="result" id="result" aria-live="polite"></div>
 

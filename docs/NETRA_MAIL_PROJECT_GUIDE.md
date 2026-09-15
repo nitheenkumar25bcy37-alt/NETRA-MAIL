@@ -224,14 +224,14 @@ The project includes controls for local and hosted operation:
 - explicit browser-origin allowlists;
 - API identities stored as SHA-256 token digests;
 - admin, analyst, auditor and submitter roles;
-- local-profile extension credentials that persist across browser restarts;
+- automatic, origin-scoped extension analysis submissions;
 - request-size and rate limits;
 - PII masking for applicable analysis paths;
 - optional encrypted evidence storage;
 - controlled provider disclosure;
 - fail-closed hosted deployment checks.
 
-The deployed API and dashboard addresses are configured automatically and Email Protection starts enabled. The extension access key is entered once per Chrome profile and remains available across browser restarts without being synchronized to other computers.
+The deployed API and dashboard addresses are configured automatically and Email Protection starts enabled. Users can analyze an open Gmail message without entering a shared access key; SOC and administrative access remains authenticated.
 
 ---
 
@@ -382,9 +382,9 @@ Yes, through static and bounded inspection. It does not execute suspicious progr
 
 Yes. Cases and investigations can produce JSON, HTML and PDF reports with supporting findings and evidence records.
 
-### Why does another computer need the access key once?
+### Does another computer need an extension access key?
 
-The key is deliberately stored only in the local Chrome profile and is never committed to Git or synchronized. Each computer needs the authorized extension key once; subsequent browser sessions reconnect automatically.
+No. The packaged extension submits only the selected-message analysis request through its configured Chrome extension origin. Administrative, investigation, evidence and reporting routes remain protected by server-side credentials.
 
 ---
 

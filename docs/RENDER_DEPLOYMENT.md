@@ -40,15 +40,12 @@ to the URL Render assigned and redeploy.
 
 ## 3. Connect the Chrome extension
 
-The packaged extension automatically uses the deployed NETRA API and SOC dashboard
-and starts with Email Protection enabled. Each Chrome profile needs its submitter
-credential once. Open the extension popup, expand **Backend authentication**, and enter:
-
-- **Access key**: the generated `EXTENSION_ACCESS_KEY` value.
-
-Choose **Connect this Chrome profile**, open a Gmail message, and select
+The packaged extension automatically uses the deployed NETRA API and SOC dashboard,
+starts with Email Protection enabled, and can submit the currently selected Gmail
+message without a shared access key. Open a Gmail message and select
 **Analyze current email**.
 
-The key remains in that computer's local Chrome profile across browser restarts. It
-is not synchronized to other computers or exposed to Gmail page scripts. The server
-and dashboard fields remain available for custom deployments.
+Only that analysis submission route accepts the configured Chrome extension origin.
+SOC, investigation, evidence, reporting and dashboard routes still require their
+configured credentials. **Advanced connection settings** remains available for a
+private or custom backend.
