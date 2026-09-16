@@ -31,8 +31,11 @@ Enter these prompted values for the API service:
 
 Enter these prompted values for the dashboard service:
 
-- `NETRA_API_URL`: the API's HTTPS Render URL, with no trailing slash.
 - `NETRA_API_ACCESS_KEY`: the generated `DASHBOARD_ACCESS_KEY` value.
+
+The Blueprint sets `NETRA_API_URL` and `NETRA_ALLOWED_API_ORIGINS` to the
+standard NETRA API service. If Render assigns a different API hostname, update
+both values to that HTTPS origin with no trailing slash.
 
 Apply the Blueprint and wait for both health checks to pass. If Render changes the
 API service name because the requested name is unavailable, update both URL values

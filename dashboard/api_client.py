@@ -18,6 +18,13 @@ class APIClient:
         response = requests.request(method, f"{self.base_url}{path}", timeout=45, headers=headers, allow_redirects=False, **kwargs)
         if 300 <= response.status_code < 400:
             raise RuntimeError("Backend redirects are not permitted.")
+        if response.status_code == 404 and path.startswith("/api/v2/emails/"):
+            raise RuntimeError(
+                "This investigation was not found on the configured NETRA backend "
+                f"({self.base_url}). Confirm that the dashboard and Gmail extension "
+                "use the same API address, then analyze the email again if the "
+                "backend data was reset."
+            )
         response.raise_for_status()
         return response.json()
 

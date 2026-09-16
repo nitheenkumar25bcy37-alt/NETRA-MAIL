@@ -10,13 +10,14 @@ async function dashboardBaseURL() {
     return netraOrigin(stored.netraDashboardOrigin || NETRA_DEFAULT_DASHBOARD_ORIGIN);
 }
 
-async function dashboardReportURL(emailId) {
+async function dashboardReportURL(emailId, apiOrigin) {
     const identifier = String(emailId || "");
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(identifier)) {
         return "";
     }
     const url = new URL(await dashboardBaseURL());
     url.searchParams.set("email_id", identifier);
+    url.searchParams.set("api_origin", netraOrigin(apiOrigin));
     return url.toString();
 }
 
@@ -203,7 +204,7 @@ async function analyzeEmail(email) {
     }
 
 
-    data.dashboard_url = await dashboardReportURL(data.email_id);
+    data.dashboard_url = await dashboardReportURL(data.email_id, API_BASE_URL);
     return data;
 }
 

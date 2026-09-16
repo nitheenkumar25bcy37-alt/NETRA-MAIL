@@ -32,7 +32,10 @@ test("extension uses persistent local credentials with bounded, non-redirecting 
     assert.equal(request.options.redirect, "error");
     assert.equal(request.options.credentials, "omit");
     assert.ok(request.options.signal);
-    assert.equal(result.dashboard_url, "https://netra-mail-dashboard.onrender.com/?email_id=123e4567-e89b-42d3-a456-426614174000");
+    assert.equal(
+        result.dashboard_url,
+        "https://netra-mail-dashboard.onrender.com/?email_id=123e4567-e89b-42d3-a456-426614174000&api_origin=https%3A%2F%2Fnetra-mail.onrender.com"
+    );
 });
 
 test("extension installation configures hosted services and enables protection", async () => {

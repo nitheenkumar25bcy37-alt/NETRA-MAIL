@@ -52,6 +52,8 @@ services:
       - key: PYTHON_VERSION
         value: 3.12.8
       - key: NETRA_API_URL
-        sync: false
+        value: https://netra-mail.onrender.com
+      - key: NETRA_ALLOWED_API_ORIGINS
+        value: https://netra-mail.onrender.com
       - key: NETRA_API_ACCESS_KEY
         sync: false

@@ -1,10 +1,13 @@
 import json
+import os
 import unittest
 from pathlib import Path
+from unittest.mock import Mock, patch
 
 from fastapi.testclient import TestClient
 
 from backend.main import app
+from dashboard.api_client import APIClient
 
 
 class Phase6DashboardTests(unittest.TestCase):
@@ -40,6 +43,28 @@ class Phase6DashboardTests(unittest.TestCase):
         self.assertNotIn("scheduleScan();", content)
         self.assertIn("Analyze current email", Path("extension/popup.html").read_text(encoding="utf-8"))
         self.assertIn("NETRA_ANALYZE_CURRENT_EMAIL", popup)
+
+    def test_render_dashboard_uses_the_same_api_as_the_extension(self):
+        render_config = Path("render.yaml").read_text(encoding="utf-8")
+        self.assertIn("value: https://netra-mail.onrender.com", render_config)
+        connection = Path("extension/connection.js").read_text(encoding="utf-8")
+        self.assertIn(
+            'NETRA_DEFAULT_API_ORIGIN = "https://netra-mail.onrender.com"',
+            connection,
+        )
+        background = Path("extension/background.js").read_text(encoding="utf-8")
+        self.assertIn('url.searchParams.set("api_origin", netraOrigin(apiOrigin))', background)
+
+    def test_dashboard_explains_email_not_found_backend_mismatch(self):
+        response = Mock(status_code=404)
+        with patch.dict(os.environ, {}, clear=False), patch(
+            "dashboard.api_client.requests.request", return_value=response
+        ):
+            client = APIClient("https://netra-mail.onrender.com")
+            with self.assertRaisesRegex(
+                RuntimeError, "dashboard and Gmail extension use the same API address"
+            ):
+                client.email("d8beb0a3-d9e4-47fe-b716-77fa3d89581d")
 
 
 if __name__ == "__main__":

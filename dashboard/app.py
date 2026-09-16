@@ -13,7 +13,24 @@ from dashboard.api_client import APIClient
 
 st.set_page_config(page_title="NETRA-Mail Investigation", page_icon="N", layout="wide")
 
-client = APIClient()
+def selected_api_client() -> APIClient:
+    configured = APIClient()
+    requested = str(st.query_params.get("api_origin", "")).rstrip("/")
+    allowed = {
+        configured.base_url,
+        "https://netra-mail.onrender.com",
+    }
+    allowed.update(
+        origin.strip().rstrip("/")
+        for origin in os.getenv("NETRA_ALLOWED_API_ORIGINS", "").split(",")
+        if origin.strip()
+    )
+    if requested and requested in allowed:
+        return APIClient(requested)
+    return configured
+
+
+client = selected_api_client()
 st.markdown("""
 <style>
 :root { color-scheme: dark; }
