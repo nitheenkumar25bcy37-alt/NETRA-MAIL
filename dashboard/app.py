@@ -121,14 +121,34 @@ def render_email(email_id: str):
         if trace_error:
             st.error(trace_error)
         else:
-            for index, hop in enumerate(trace.get("hops", []), 1):
-                st.markdown(f"**Hop {index}**  `{hop.get('source_hostname') or 'Unknown'}` -> `{hop.get('destination_hostname') or 'Unknown'}`")
-                st.caption(f"IP: {hop.get('source_ip') or 'Unknown'} · classification: {', '.join(hop.get('ip_classifications', [])) or 'Unknown'} · timestamp: {hop.get('timestamp') or 'Unavailable'}")
-            st.subheader("Origin candidates")
-            for candidate in trace.get("origin_candidates", []):
-                st.write(f"`{candidate.get('ip')}` · confidence `{float(candidate.get('confidence', 0)):.0%}` · {', '.join(candidate.get('basis', []))}")
+            hops = trace.get("hops", []) or []
+            candidates = trace.get("origin_candidates", []) or []
+            limitations = trace.get("limitations", []) or []
+
+            if not hops:
+                st.warning("Origin trace unavailable for this analysis")
+                st.write(
+                    "The captured Gmail message did not include the trusted Received "
+                    "header chain needed to reconstruct mail-server hops. NETRA will not "
+                    "invent an IP address or sender location."
+                )
+                st.caption(
+                    "To populate this section, analyze the original .eml message with full "
+                    "headers or use a trusted mail-provider/server-side ingestion source."
+                )
+            else:
+                st.subheader("Observed mail-server hops")
+                for index, hop in enumerate(hops, 1):
+                    st.markdown(f"**Hop {index}**  `{hop.get('source_hostname') or 'Unknown'}` -> `{hop.get('destination_hostname') or 'Unknown'}`")
+                    st.caption(f"IP: {hop.get('source_ip') or 'Unknown'} · classification: {', '.join(hop.get('ip_classifications', [])) or 'Unknown'} · timestamp: {hop.get('timestamp') or 'Unavailable'}")
+
+                st.subheader("Origin candidates")
+                if not candidates:
+                    st.info("No defensible public origin candidate was present in the observed hops.")
+                for candidate in candidates:
+                    st.write(f"`{candidate.get('ip')}` · confidence `{float(candidate.get('confidence', 0)):.0%}` · {', '.join(candidate.get('basis', []))}")
             map_points = []
-            for candidate in trace.get("origin_candidates", []):
+            for candidate in candidates:
                 ip = str(candidate.get("ip") or "")
                 if not ip:
                     continue
@@ -151,8 +171,12 @@ def render_email(email_id: str):
             if map_points:
                 st.subheader("Origin infrastructure map")
                 st.map(map_points, latitude="lat", longitude="lon", size=120)
-            st.info("Geolocation is infrastructure intelligence and does not prove the sender's physical location.")
-            st.json({"limitations": trace.get("limitations", [])})
+            if candidates:
+                st.info("Geolocation is infrastructure intelligence and does not prove the sender's physical location.")
+            if limitations:
+                with st.expander("Origin-trace limitations"):
+                    for limitation in limitations:
+                        st.write(f"- {limitation}")
     with tabs[2]:
         graph, graph_error = safe_call(client.graph, email_id)
         if graph and not graph_error:

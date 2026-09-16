@@ -71,6 +71,13 @@ class Phase6DashboardTests(unittest.TestCase):
             ):
                 client.email("d8beb0a3-d9e4-47fe-b716-77fa3d89581d")
 
+    def test_dashboard_explains_missing_origin_evidence(self):
+        dashboard = Path("dashboard/app.py").read_text(encoding="utf-8")
+        self.assertIn("Origin trace unavailable for this analysis", dashboard)
+        self.assertIn("NETRA will not ", dashboard)
+        self.assertIn("invent an IP address or sender location", dashboard)
+        self.assertIn("original .eml message with full", dashboard)
+
 
 if __name__ == "__main__":
     unittest.main()
