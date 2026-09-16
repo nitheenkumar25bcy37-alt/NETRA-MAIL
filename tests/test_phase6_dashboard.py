@@ -54,6 +54,11 @@ class Phase6DashboardTests(unittest.TestCase):
         )
         background = Path("extension/background.js").read_text(encoding="utf-8")
         self.assertIn('url.searchParams.set("api_origin", netraOrigin(apiOrigin))', background)
+        dashboard = Path("dashboard/app.py").read_text(encoding="utf-8")
+        self.assertIn(
+            'configured.base_url == "https://netra-mail-api.onrender.com"',
+            dashboard,
+        )
 
     def test_dashboard_explains_email_not_found_backend_mismatch(self):
         response = Mock(status_code=404)

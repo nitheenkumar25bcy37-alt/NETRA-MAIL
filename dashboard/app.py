@@ -15,6 +15,11 @@ st.set_page_config(page_title="NETRA-Mail Investigation", page_icon="N", layout=
 
 def selected_api_client() -> APIClient:
     configured = APIClient()
+    # Migrate dashboards that still have the retired Render API hostname in
+    # their environment. Render preserves manually entered environment values
+    # across deploys, so correcting render.yaml alone cannot update them.
+    if configured.base_url == "https://netra-mail-api.onrender.com":
+        configured = APIClient("https://netra-mail.onrender.com")
     requested = str(st.query_params.get("api_origin", "")).rstrip("/")
     allowed = {
         configured.base_url,
