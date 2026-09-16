@@ -731,6 +731,7 @@ class AnalysisOrchestrator:
                 "highest_risk": 0,
             }
         )
+        parsed["url_analysis"] = url_result
 
         sender_domain = str(verified.get("dmarc", {}).get("from_domain", "")).lower().rstrip(".")
         def aligned_first_party(item):
@@ -915,7 +916,41 @@ class AnalysisOrchestrator:
         ]
 
         # ==============================================================
-        # 13. NORMALIZE FINDINGS
+        # 13. EMAIL ML AS CORROBORATED SUPPORTING EVIDENCE
+        # ==============================================================
+
+        from backend.ml_classifier import LocalMLClassifier
+        try:
+            ml_analysis = {"available": True, **LocalMLClassifier.predict(text)}
+            probability = float(ml_analysis.get("phishing_probability", 0.0))
+            corroborating = [
+                item for item in findings
+                if str(getattr(item, "severity", item.get("severity", "info") if isinstance(item, dict) else "info")).lower()
+                in {"medium", "high", "critical"}
+            ]
+            ml_analysis["used_in_decision"] = False
+            if probability >= 0.55 and corroborating:
+                severity = "medium" if probability >= 0.75 and len(corroborating) >= 2 else "low"
+                findings.append(self._finding(
+                    "Machine learning", "corroborated_email_ml", severity,
+                    min(0.9, max(0.55, probability)),
+                    "Email ML supports independently detected threat signals",
+                    "The email text model agrees with separate explainable evidence; it is not used as a standalone verdict.",
+                    {"phishing_probability": round(probability, 4), "corroborating_findings": len(corroborating)},
+                    ml_analysis.get("limitations", []),
+                ))
+                ml_analysis["used_in_decision"] = True
+            parsed["ml_analysis"] = ml_analysis
+        except Exception:
+            parsed["ml_analysis"] = {
+                "available": False,
+                "used_in_decision": False,
+                "classification": "UNAVAILABLE",
+                "limitations": ["An evaluated email model must be provisioned. Explainable analysis remains available."],
+            }
+
+        # ==============================================================
+        # 14. NORMALIZE FINDINGS
         # ==============================================================
 
         normalized_findings = [
@@ -931,7 +966,7 @@ class AnalysisOrchestrator:
         ]
 
         # ==============================================================
-        # 14. FINAL RISK ENGINE
+        # 15. FINAL RISK ENGINE
         # ==============================================================
 
         risk = RiskEngine.evaluate(
@@ -940,7 +975,7 @@ class AnalysisOrchestrator:
         )
 
         # ==============================================================
-        # 15. MULTILINGUAL RESULT
+        # 16. MULTILINGUAL RESULT
         #
         # Keep BOTH names for compatibility:
         #
@@ -1070,18 +1105,6 @@ class AnalysisOrchestrator:
             if ocr_text:
                 image["ocr_text_sha256"] = hashlib.sha256(ocr_text.encode("utf-8")).hexdigest()
                 image["ocr_character_count"] = len(ocr_text)
-        # Persist ML availability separately from heuristic evidence. An
-        # unevaluated model must not silently increase the blocking score.
-        from backend.ml_classifier import LocalMLClassifier
-        try:
-            sanitized["ml_analysis"] = {"available": True, **LocalMLClassifier.predict(text)}
-        except Exception:
-            sanitized["ml_analysis"] = {
-                "available": False,
-                "classification": "UNAVAILABLE",
-                "limitations": ["An evaluated email model must be provisioned. Heuristic analysis remains available."]
-            }
-
         # Raw originals remain in evidence storage, not in routine API results.
         from backend.compliance import IndiaPrivacyPreserver
         sanitized["body"] = IndiaPrivacyPreserver.redact_structure(sanitized.get("body") or {})

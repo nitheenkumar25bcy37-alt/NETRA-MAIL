@@ -620,6 +620,11 @@ class URLAnalyzer:
 
             "ssrf_risk": False,
 
+            "ml_analysis": {
+                "available": False,
+                "used_in_score": False,
+            },
+
         }
 
         # --------------------------------------------------------
@@ -1500,6 +1505,42 @@ class URLAnalyzer:
             result["risk_reasons"].append(
                 "Raw IP address combined with credential/account keywords"
             )
+
+        # --------------------------------------------------------
+        # Evaluated URL ML (bounded supporting evidence)
+        # --------------------------------------------------------
+
+        heuristic_score = int(result["risk_score"])
+        try:
+            from backend.url_ml_classifier import URLMLClassifier
+            ml_analysis = URLMLClassifier.predict(url_text)
+            ml_analysis["used_in_score"] = False
+            probability = float(ml_analysis.get("phishing_probability", 0.0))
+
+            # The model never creates a verdict by itself. It can strengthen a
+            # URL only when the explainable analyzer independently found risk.
+            # This protects ordinary unseen sites from model-only false alarms.
+            if probability >= 0.98 and heuristic_score >= 25:
+                result["risk_score"] += 15
+                ml_analysis["used_in_score"] = True
+                result["risk_reasons"].append(
+                    "URL ML and independent structural indicators both identify phishing-like behavior"
+                )
+            elif probability >= 0.90 and heuristic_score >= 15:
+                result["risk_score"] += 8
+                ml_analysis["used_in_score"] = True
+                result["risk_reasons"].append(
+                    "URL ML supports the independently detected suspicious URL structure"
+                )
+            result["ml_analysis"] = ml_analysis
+        except Exception as exc:
+            result["ml_analysis"] = {
+                "available": False,
+                "used_in_score": False,
+                "classification": "UNAVAILABLE",
+                "limitations": ["URL ML was unavailable; explainable URL analysis remained active."],
+                "error_type": type(exc).__name__,
+            }
 
         # --------------------------------------------------------
         # Final normalization
