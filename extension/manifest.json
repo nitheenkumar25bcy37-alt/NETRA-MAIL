@@ -34,5 +34,11 @@
   "action": {
     "default_popup": "popup.html",
     "default_title": "NETRA-Mail Shield"
+  },
+  "oauth2": {
+    "client_id": "427697599942-s4ko8q8rcc6h9tahu5k37geb01ieslag.apps.googleusercontent.com",
+    "scopes": [
+      "https://www.googleapis.com/auth/gmail.readonly"
+    ]
   }
 }
