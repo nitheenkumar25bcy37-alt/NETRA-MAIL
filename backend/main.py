@@ -511,13 +511,8 @@ class _VisibleTextParser(HTMLParser):
 
 
 def _visible_html_text(html: str) -> str:
-    parser = _VisibleTextParser()
-    try:
-        parser.feed(html or "")
-        parser.close()
-        return " ".join(parser.parts)
-    except Exception:
-        return re.sub(r"<[^>]+>", " ", html or "")
+    from backend.parser import ForensicEmailParser
+    return ForensicEmailParser._extract_html_details(html or "")["visible_text"]
 
 
 def _safe_text_from_parsed(

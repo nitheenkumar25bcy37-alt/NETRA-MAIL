@@ -36,3 +36,28 @@ def test_generic_money_and_click_language_does_not_form_bec(tmp_path, monkeypatc
     message["Subject"] = "Earn money with new roles"; message.set_content("Click here to view roles: https://example.com/jobs")
     result = AnalysisOrchestrator(ip_provider=OfflineIPs(), domain_provider=OfflineDomains()).analyze(message.as_bytes())
     assert all(finding.rule != "payment_authority_combination" for finding in result.findings)
+
+
+def test_html_metadata_and_hidden_text_do_not_enter_visible_nlp():
+    from backend.parser import ForensicEmailParser
+    html = "<head><title><!--terminated manager payment password--></title><style>.payment{}</style></head><body><p>Competition prize pool. Register now.</p><div style='display: none'><span>wire money urgently</span></div><p>Welcome students</p><script>password</script></body>"
+    details = ForensicEmailParser._extract_html_details(html)
+    assert "Welcome students" in details["visible_text"]
+    assert all(word not in details["visible_text"] for word in ["terminated", "password", "wire", "manager"])
+
+
+def test_promotion_metadata_does_not_trigger_bec_and_attack_still_does(monkeypatch):
+    from email.message import EmailMessage
+    from backend.services.analysis_orchestrator import AnalysisOrchestrator
+    from evaluation.evaluate_v2 import OfflineDomains, OfflineIPs
+    monkeypatch.setattr("backend.dkim_verifier.DKIMVerifier.verify", lambda *a: {"status": "unsigned", "signatures": [], "limitations": []})
+    engine = AnalysisOrchestrator(ip_provider=OfflineIPs(), domain_provider=OfflineDomains())
+    message = EmailMessage(); message["From"] = "events@example.com"; message["Subject"] = "Competition invitation"
+    message.set_content("<html><body><p>Register for a competition with a prize pool and career opportunities.</p><title><!--terminated manager bank account payment login password--></title></body></html>", subtype="html")
+    result = engine.analyze(message.as_bytes())
+    assert result.classification == "Legitimate or low risk"
+    assert all(f.rule not in {"contextual_social_engineering", "payment_authority_combination"} for f in result.findings)
+    message.set_content("The manager requests that you wire money to our new bank account urgently.")
+    attack = engine.analyze(message.as_bytes())
+    assert attack.classification == "Business Email Compromise"
+    assert any(f.rule == "payment_destination_change" for f in attack.findings)

@@ -27,10 +27,17 @@ class _SafeHTMLExtractor(HTMLParser):
         self.inline_images: List[Dict[str, str]] = []
         self._form: Dict[str, Any] | None = None
         self._form_text: List[str] = []
+        self._visibility_stack: List[tuple[str, bool]] = []
 
     def handle_starttag(self, tag: str, attrs: List[tuple[str, str | None]]) -> None:
         attributes = {key.lower(): value or "" for key, value in attrs}
         tag = tag.lower()
+
+        style = re.sub(r"\s+", "", attributes.get("style", "").lower())
+        hidden = tag in {"head", "title", "script", "style", "template"} or "hidden" in attributes or attributes.get("aria-hidden", "").lower() == "true" or "display:none" in style or "visibility:hidden" in style
+        suppressed = hidden or any(flag for _, flag in self._visibility_stack)
+        if tag not in {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"}:
+            self._visibility_stack.append((tag, suppressed))
 
         if tag == "form":
             self._form = {
@@ -71,6 +78,10 @@ class _SafeHTMLExtractor(HTMLParser):
             )
 
     def handle_endtag(self, tag: str) -> None:
+        for index in range(len(self._visibility_stack) - 1, -1, -1):
+            if self._visibility_stack[index][0] == tag.lower():
+                del self._visibility_stack[index:]
+                break
         if tag.lower() == "form" and self._form is not None:
             self._form["visible_text"] = " ".join(self._form_text).strip()
             self.forms.append(self._form)
@@ -78,6 +89,8 @@ class _SafeHTMLExtractor(HTMLParser):
             self._form_text = []
 
     def handle_data(self, data: str) -> None:
+        if any(flag for _, flag in self._visibility_stack):
+            return
         text = " ".join(data.split())
         if not text:
             return

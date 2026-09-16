@@ -47,7 +47,7 @@ class AnalysisOrchestrator:
     - Language alone is never considered malicious.
     """
 
-    VERSION = "4.4.0"
+    VERSION = "4.4.1"
 
     def __init__(
         self,
@@ -419,7 +419,7 @@ class AnalysisOrchestrator:
                     "",
                 ),
                 body.get(
-                    "html",
+                    "visible_text",
                     "",
                 ),
             )
@@ -629,7 +629,13 @@ class AnalysisOrchestrator:
                 "request", "requested", "please", "action required",
             }
         ]
-        if strong_financial and strong_authority:
+        # A financial noun plus an authority noun is not a payment instruction.
+        import re
+        payment_instruction = re.search(
+            r"\b(?:send|transfer|wire|remit|pay|deposit|purchase|buy|approve)\b[^.!?\n]{0,120}\b(?:money|funds|payment|invoice|account|bank|gift\s+cards?|transaction)\b",
+            text, re.I,
+        )
+        if strong_financial and strong_authority and payment_instruction:
             findings.append(
                 self._finding(
                     "BEC",
