@@ -30,6 +30,10 @@ def test_configured_extension_can_analyze_without_shared_key(monkeypatch):
     assert response.status_code == 200, response.text
     assert "correlation" not in response.json()
 
+    # The original-message route has the same scoped submission identity.
+    invalid_original = client.post("/api/v2/mailbox/analyze", headers={"Origin": origin}, json={})
+    assert invalid_original.status_code == 400, invalid_original.text
+
     assert client.get("/api/v2/me", headers={"Origin": origin}).status_code == 401
     assert client.post(
         "/api/v2/emails/analyze",

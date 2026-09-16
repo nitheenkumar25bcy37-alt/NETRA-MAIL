@@ -106,3 +106,23 @@ test("changing server never forwards the previous server credential", async () =
     const headers = await vm.runInContext('authenticatedHeaders("https://new.example")', context);
     assert.equal(headers["X-NETRA-API-Key"], undefined);
 });
+
+
+test("configured Gmail consent submits selected ID to original-message endpoint", async () => {
+    let request;
+    const context = vm.createContext({
+        chrome: {
+            storage: {local: {get: async () => ({})}},
+            identity: {getAuthToken: async options => { assert.equal(options.interactive, true); return {token: "test-provider-token"}; }},
+            runtime: {getManifest: () => ({oauth2: {client_id: "test-client"}}), onMessage: {addListener: () => {}}}
+        },
+        fetch: async (url, options) => { request = {url, options}; return {ok: true, json: async () => ({email_id: "123e4567-e89b-42d3-a456-426614174000"})}; },
+        URL, console, AbortSignal, importScripts: () => {}
+    });
+    for (const name of ["connection.js", "background.js"]) vm.runInContext(fs.readFileSync(path.join(__dirname, "../extension/" + name), "utf8"), context);
+    await vm.runInContext('analyzeEmail({gmail_message_id: "18f123456789abcd"})', context);
+    assert.equal(request.url, "https://netra-mail.onrender.com/api/v2/mailbox/analyze");
+    assert.deepEqual(JSON.parse(request.options.body), {provider: "gmail", message_id: "18f123456789abcd", access_token: "test-provider-token"});
+    assert.equal(request.options.redirect, "error");
+    await assert.rejects(vm.runInContext('analyzeEmail({gmail_message_id: "invalid"})', context), /ID unavailable/);
+});

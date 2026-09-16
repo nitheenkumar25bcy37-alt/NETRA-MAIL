@@ -83,6 +83,11 @@ class EmailAuthenticationVerifier:
         spf_match = re.search(r"\bspf=(pass|fail|softfail|neutral|none|temperror|permerror)\b[^;]*(?:smtp\.mailfrom|smtp\.helo)=([^\s;]+)", combined, re.I)
         spf_identity = spf_match.group(2) if spf_match else ""
         spf = {"status": spf_match.group(1).lower() if spf_match else "unavailable", "domain": _domain(spf_identity) or spf_identity.lower().rstrip("."), "source": "trusted_receiver" if spf_match else "unavailable"}
+        spf["reason"] = ("The delivery receiver reported this SPF result at receipt." if spf_match else "SPF needs the real SMTP session or delivery results fetched directly from Gmail; visible text and uploaded headers cannot establish it.")
+        receiver_dkim = re.search(r"\bdkim=(pass|fail|none|neutral|temperror|permerror)\b", combined, re.I)
+        if receiver_dkim:
+            dkim_result["receiver_status"] = receiver_dkim.group(1).lower()
+            dkim_result["receiver_source"] = "trusted_receiver"
         passing_dkim = [item.get("domain", "") for item in dkim_result.get("signatures", []) if item.get("status") == "pass"]
         dmarc_match = re.search(r"\bdmarc=(pass|fail|bestguesspass|none|temperror|permerror)\b[^;]*header\.from=([^\s;]+)", combined, re.I)
         dmarc = {"status": "unavailable", "from_domain": from_domain, "source": "local_alignment"}
@@ -93,6 +98,7 @@ class EmailAuthenticationVerifier:
         if dmarc_match:
             dmarc["receiver_status"] = dmarc_match.group(1).lower()
             dmarc["receiver_from_domain"] = dmarc_match.group(2).lower().rstrip(".")
+        dmarc["reason"] = "Local alignment uses verified signatures and trusted sending-server results." if dmarc["status"] != "unavailable" else "No verified aligned signature or trusted sending-server result was available for local alignment."
         return {"status": dkim_result.get("status", "unavailable"), "signatures": dkim_result.get("signatures", []),
             "dkim": dkim_result, "spf": spf, "dmarc": dmarc, "arc": arc_result,
             "trusted_authserv_ids": sorted(active_trust),

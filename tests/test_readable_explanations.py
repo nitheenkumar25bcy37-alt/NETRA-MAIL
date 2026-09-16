@@ -37,3 +37,11 @@ def test_report_exports_explanations_and_escapes_untrusted_text():
     assert "Brand impersonation" in html and "verify password" in html
     assert "<script>" not in html and "&lt;script&gt;" in html
     assert ReportService._render(report, "pdf").startswith(b"%PDF")
+
+
+def test_unsigned_and_provider_result_are_distinct():
+    view = explain_analysis({"parsed": {"verified_authentication": {"dkim": {"status": "unsigned", "source": "local_dkim_verification", "receiver_status": "pass", "receiver_source": "trusted_receiver"}}}})
+    item = view["authentication"][1]
+    assert item["status"] == "unsigned" and item["receiver_status"] == "pass"
+    assert "no DKIM signature" in item["interpretation"]
+    assert "Delivery-provider result: pass" in "\n".join(explanation_lines(view))

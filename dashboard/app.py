@@ -141,10 +141,26 @@ def render_email(email_id: str):
                 model = url["model"]
                 st.caption("URL model: " + (str(model.get("classification", "Prediction available")) if model.get("available") else "Unavailable") + "; " + ("contributed with structural evidence" if model.get("used_in_score") else "did not contribute to URL score"))
         st.subheader("Sender identity checks")
+        if any(item["status"] == "unavailable" for item in view["authentication"]):
+            st.info("Visible Gmail content lacks original signed bytes or trusted delivery results. Connect Gmail with Google consent, or upload its original message below.")
+            with st.expander("Verify an original email"):
+                st.write("Gmail message menu > Show original > Download Original. Upload that .eml here. This creates a new investigation; SPF claims in uploaded files remain untrusted.")
+                original = st.file_uploader("Original message (.eml)", type=["eml"], key="original_" + email_id)
+                if st.button("Analyze original message", disabled=original is None, key="verify_original_" + email_id):
+                    checked, upload_error = safe_call(client.upload_original, original.name, original.getvalue())
+                    if upload_error:
+                        st.error(upload_error)
+                    else:
+                        st.query_params["email_id"] = checked["email_id"]
+                        st.rerun()
+
         for item in view["authentication"]:
             with st.expander(f"{item['name']}: {item['status']} | {item['label']}"):
                 st.write(item["meaning"])
                 st.write(item["interpretation"])
+                st.caption("Evidence source: " + item.get("source", "unavailable"))
+                if item.get("receiver_status"):
+                    st.write("Delivery-provider result: " + str(item["receiver_status"]) + " (separate from current local verification)")
                 if item["reason"]:
                     st.write(item["reason"])
         st.subheader("Email machine-learning support")

@@ -381,6 +381,11 @@ function extractCurrentEmail() {
         subject,
         sender,
         recipient,
+        gmail_message_id: (() => {
+            const node = messageRoot.matches("[data-legacy-message-id]") ? messageRoot : messageRoot.querySelector("[data-legacy-message-id]");
+            const id = node && node.getAttribute("data-legacy-message-id");
+            return id && /^[0-9a-f]{10,32}$/i.test(id) ? id : "";
+        })(),
         reply_to: "",
         body: body.slice(0, 500000),
         html

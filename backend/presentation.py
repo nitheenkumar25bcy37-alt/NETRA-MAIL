@@ -31,7 +31,11 @@ def explain_analysis(result):
         item = auth.get(key) or {}
         status = str(item.get("status") or "unavailable")
         interpretation = {"pass": "This identity or integrity check passed. It does not prove safe intent.", "fail": "This check failed. Review the reason and other evidence; failure alone is not proof of phishing."}.get(status, "No reliable pass or fail was established. Missing evidence is not an authentication failure.")
-        authentication.append({"name": key.upper(), "label": label, "meaning": meaning, "status": status, "interpretation": interpretation, "reason": str(item.get("reason") or "")})
+        if status == "unsigned":
+            interpretation = "The original message contains no DKIM signature. An unsigned message is not automatically phishing."
+        elif status == "none" and key == "arc":
+            interpretation = "No ARC forwarding chain is present; ARC is not required for every email."
+        authentication.append({"source": str(item.get("source") or "unavailable"), "receiver_status": item.get("receiver_status"), "receiver_source": item.get("receiver_source") or ("trusted_receiver" if item.get("receiver_status") and auth.get("delivery_source") == "gmail" else None), "name": key.upper(), "label": label, "meaning": meaning, "status": status, "interpretation": interpretation, "reason": str(item.get("reason") or "")})
     return {
         "classification": str(result.get("classification") or "Assessment unavailable"), "risk_score": score,
         "summary": "NETRA found evidence that needs attention. Review the reasons before clicking links, sharing information or sending money." if concerning else "NETRA did not find enough strong evidence to classify this email as phishing in the information it received. This does not guarantee that the email is safe.",
@@ -68,6 +72,9 @@ def explanation_lines(view):
     lines.append("Sender authentication:")
     for item in view["authentication"]:
         lines.extend([f"{item['name']} - {item['label']}: {item['status']}", item["meaning"], item["interpretation"]])
+        lines.append("Evidence source: " + item["source"])
+        if item.get("receiver_status"):
+            lines.append("Delivery-provider result: " + str(item["receiver_status"]) + " (separate from current local verification)")
         if item["reason"]:
             lines.append(item["reason"])
     model = view["model"]

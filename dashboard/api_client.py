@@ -49,6 +49,9 @@ class APIClient:
     def email(self, email_id: str) -> Dict[str, Any]:
         return self.get(f"/api/v2/emails/{email_id}")
 
+    def upload_original(self, filename: str, raw: bytes) -> Dict[str, Any]:
+        return self.post("/api/v2/emails/upload", files={"file": (filename, raw, "message/rfc822")})
+
     def findings(self, email_id: str) -> Dict[str, Any]:
         return self.get(f"/api/v2/emails/{email_id}/findings")
 

@@ -128,6 +128,26 @@ async function analyzeEmail(email) {
         throw new Error("Invalid email payload.");
     }
 
+    // Original MIME is fetched at the backend, after Google's user consent.
+    const oauth = chrome.runtime.getManifest ? chrome.runtime.getManifest().oauth2 : null;
+    if (oauth && oauth.client_id) {
+        if (!/^[0-9a-f]{10,32}$/i.test(String(email.gmail_message_id || ""))) {
+            throw new Error("Gmail original-message ID unavailable. Upload the original .eml in the dashboard.");
+        }
+        const authorization = await chrome.identity.getAuthToken({interactive: true});
+        const token = typeof authorization === "string" ? authorization : authorization.token;
+        if (!token) throw new Error("Gmail permission was not granted.");
+        const response = await fetch(API_BASE_URL + "/api/v2/mailbox/analyze", {
+            method: "POST", headers: await authenticatedHeaders(API_BASE_URL),
+            body: JSON.stringify({provider: "gmail", message_id: email.gmail_message_id, access_token: token}),
+            cache: "no-store", credentials: "omit", redirect: "error", signal: AbortSignal.timeout(180000)
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.detail || "Original Gmail message could not be verified.");
+        data.dashboard_url = await dashboardReportURL(data.email_id, API_BASE_URL);
+        return data;
+    }
+
     const payload = {
         subject: String(email.subject || ""),
         sender: String(email.sender || ""),

@@ -1,12 +1,13 @@
 {
   "manifest_version": 3,
   "name": "NETRA-Mail Shield",
-  "version": "3.4.1",
+  "version": "3.4.2",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAs3T91kJaQI8fRRNzhRmCk9mJu2VUMODsJROljvUf96OwInANPDas/jfH2YmIb6OYztOVfE2Y2f9xv5qbz3pAmY/EqETbmmZTFqhztEDM0vLD5BoxUiGgDs/sOtStKYUt3ZatH+agYmFnWiXgADCMSrHk/Rvqj7ED0ceLygixTfIxPR2JMIakLYGzH8AMjdNv7V+kRDgFW+j5QqMlJyqbD5q5E1asL2GAOw7B4ExS+8bambKL3ZgOCwvjuP45ZXFUBysN1VmQN1VsdYzOE/5eye3RMDiJJ0Tq+zVIdqFJNzxxfV9VmtKe+OF6aOF6FhXE2woTTZl/KlXAx/dgkZ8RUwIDAQAB",
   "description": "User-requested Gmail email threat analysis powered by NETRA-Mail.",
   "permissions": [
     "storage",
-    "activeTab"
+    "activeTab",
+    "identity"
   ],
   "host_permissions": [
     "http://127.0.0.1:8000/*",

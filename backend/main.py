@@ -272,7 +272,7 @@ async def deployment_access_control(request: Request, call_next):
             and NETRA_EXTENSION_ORIGIN
             and origin == NETRA_EXTENSION_ORIGIN
             and request.method == "POST"
-            and request.url.path == "/api/v2/emails/analyze"
+            and request.url.path in {"/api/v2/emails/analyze", "/api/v2/mailbox/analyze"}
         ):
             identity = Principal("gmail-extension", "submitter")
         if identity is None:
