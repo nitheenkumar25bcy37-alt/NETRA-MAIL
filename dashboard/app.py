@@ -9,6 +9,7 @@ import streamlit as st
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from dashboard.api_client import APIClient
+from backend.presentation import explain_analysis
 
 
 st.set_page_config(page_title="NETRA-Mail Investigation", page_icon="N", layout="wide")
@@ -60,7 +61,12 @@ def render_finding(finding: Dict[str, Any]):
     severity = str(finding.get("severity", "unknown")).upper()
     st.markdown(f"**{finding.get('title', 'Finding')}**  ·  `{severity}`  ·  confidence `{float(finding.get('confidence', 0)):.0%}`")
     st.write(finding.get("description", "No explanation available."))
-    with st.expander("Evidence and limitations"):
+    for key, value in (finding.get("evidence") or {}).items():
+        if isinstance(value, (str, int, float, bool)):
+            st.write(key.replace("_", " ").capitalize() + ": " + str(value))
+        elif isinstance(value, list) and all(isinstance(item, (str, int, float)) for item in value):
+            st.write(key.replace("_", " ").capitalize() + ": " + ", ".join(map(str, value)))
+    with st.expander("Technical evidence and limitations"):
         st.json({"evidence": finding.get("evidence", {}), "limitations": finding.get("limitations", [])})
 
 
@@ -98,25 +104,58 @@ def render_email(email_id: str):
     st.title("Email Investigation")
     st.caption(email_id)
     score = int(result.get("risk_score", 0))
-    st.markdown(f"<h2 style='color:{risk_color(score)}'>{result.get('classification', 'Unknown')} · {score}/100</h2>", unsafe_allow_html=True)
+    view = result.get("explanation") or explain_analysis({**result, "findings": (findings or {}).get("findings", [])})
+    st.subheader(f"{view['classification']} | {score}/100")
+    st.info(view["summary"])
     c1, c2, c3 = st.columns(3)
-    c1.metric("Confidence", f"{float(result.get('confidence', 0)):.0%}")
+    confidence = float(result.get("confidence") or 0)
+    c1.metric("Observation confidence", f"{confidence:.0%}" if confidence else "Not estimated")
     c2.metric("Evidence hash", str(result.get("evidence", {}).get("sha256", "Unavailable"))[:18] + "...")
     c3.metric("Analysis version", result.get("evidence", {}).get("analysis_version", "Unknown"))
-    tabs = st.tabs(["Findings", "Origin trace", "Relationships", "Limitations"])
+    st.caption(view["confidence_note"])
+    tabs = st.tabs(["Why this result?", "Origin trace", "Relationships", "Limitations"])
     with tabs[0]:
-        parsed = result.get("parsed", {})
-        st.subheader("Authentication evidence")
-        st.json(parsed.get("verified_authentication", {"status": "unavailable"}))
-        with st.expander("Reported authentication and model availability"):
-            st.json({"reported": parsed.get("reported_authentication", {}), "model": parsed.get("ml_analysis", {})})
+        st.subheader("Why NETRA reached this result")
         if findings_error:
-            st.error(findings_error)
-        elif not findings.get("findings"):
-            st.info("No structured findings were returned.")
-        else:
-            for finding in findings["findings"]:
-                render_finding(finding)
+            st.warning("Some finding details could not be loaded: " + findings_error)
+        if not view["reasons"]:
+            st.write("No actionable warning was reported. The available content did not provide enough strong evidence for a phishing verdict.")
+        for finding in view["reasons"]:
+            render_finding(finding)
+        st.subheader("Text and multilingual analysis")
+        text = view["text_analysis"]
+        st.write("Detected language: " + text["language"])
+        st.write(text["summary"])
+        for signal in text["signals"]:
+            st.write(signal["label"] + ": " + ", ".join(signal["cues"]))
+        st.subheader("Link analysis")
+        st.write(view["url_analysis"]["summary"])
+        for index, url in enumerate(view["url_analysis"]["urls"], 1):
+            with st.expander(f"Link {index}: {url['assessment']} | {url['risk_score']}/100", expanded=url["risk_score"] >= 35):
+                st.code(url["url"], language=None)
+                st.write("Destination: " + (url["destination"] or "Not established"))
+                for reason in url["reasons"]:
+                    st.write("- " + reason)
+                if not url["reasons"]:
+                    st.write("No specific URL warning reported. This does not guarantee the destination is safe.")
+                model = url["model"]
+                st.caption("URL model: " + (str(model.get("classification", "Prediction available")) if model.get("available") else "Unavailable") + "; " + ("contributed with structural evidence" if model.get("used_in_score") else "did not contribute to URL score"))
+        st.subheader("Sender identity checks")
+        for item in view["authentication"]:
+            with st.expander(f"{item['name']}: {item['status']} | {item['label']}"):
+                st.write(item["meaning"])
+                st.write(item["interpretation"])
+                if item["reason"]:
+                    st.write(item["reason"])
+        st.subheader("Email machine-learning support")
+        model = view["model"]
+        st.write("Prediction: " + str(model.get("classification", "Not reported")) if model.get("available") else "Model evidence was unavailable for this analysis.")
+        st.caption("Used with corroborating evidence." if model.get("used_in_decision") else "Did not contribute to the verdict. Model output alone does not establish phishing.")
+        st.subheader("What should I do next?")
+        for action in view["recommended_actions"]:
+            st.write("- " + action)
+        with st.expander("Technical data for analysts"):
+            st.json({"analysis": result, "findings": findings})
     with tabs[1]:
         if trace_error:
             st.error(trace_error)
@@ -201,7 +240,8 @@ def render_email(email_id: str):
                 st.markdown(f"**{relationship.get('relationship_type')}** · confidence `{float(relationship.get('confidence', 0)):.0%}`")
                 st.json({"evidence": relationship.get("evidence", []), "limitations": relationship.get("limitations", [])})
     with tabs[3]:
-        st.json(result.get("limitations", ["Not enough evidence."]))
+        for limitation in result.get("limitations", ["Not enough evidence."]):
+            st.write("- " + limitation)
 
 
 def render_cases():

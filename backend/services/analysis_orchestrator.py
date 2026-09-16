@@ -999,6 +999,7 @@ class AnalysisOrchestrator:
         # "multilingual_score" is the canonical field.
         # ==============================================================
 
+        parsed["nlp_analysis"] = nlp
         parsed["multilingual_analysis"] = {
             "language": multilingual.get(
                 "language",

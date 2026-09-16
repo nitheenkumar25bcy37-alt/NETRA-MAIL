@@ -5093,6 +5093,8 @@ async def get_email_v2(email_id: str):
     response = {key: result[key] for key in ("email_id", "evidence", "classification", "risk_score", "confidence", "limitations")}
     response["parsed"] = {key: result.get("parsed", {}).get(key) for key in ("verified_authentication", "reported_authentication", "ml_analysis")}
     response["evidence_reference"] = result.get("evidence_reference")
+    from backend.presentation import explain_analysis
+    response["explanation"] = explain_analysis(result)
     return response
 
 

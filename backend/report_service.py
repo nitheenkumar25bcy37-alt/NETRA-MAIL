@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from backend.presentation import explain_analysis, explanation_lines
 import html
 import json
 from datetime import datetime, timezone
@@ -39,7 +40,7 @@ class ReportService:
         integrity = [self.evidence.verify(item["evidence_id"]) for item in evidence]
         email_sections = []
         for item in analyses:
-            email_sections.append({"email_id": item.get("email_id"), "evidence": item.get("evidence"), "classification": item.get("classification"), "risk_score": item.get("risk_score"), "findings": item.get("findings", []), "parsed": {key: item.get("parsed", {}).get(key) for key in ("metadata", "origin_trace", "ip_intelligence", "domain_intelligence")}})
+            email_sections.append({"email_id": item.get("email_id"), "evidence": item.get("evidence"), "classification": item.get("classification"), "risk_score": item.get("risk_score"), "findings": item.get("findings", []), "explanation": explain_analysis(item), "parsed": {key: item.get("parsed", {}).get(key) for key in ("metadata", "origin_trace", "ip_intelligence", "domain_intelligence")}})
         relationships = [relationship for email_id in email_ids for relationship in self.db.get_relationships(email_id)]
         custody = [event for item in evidence for event in self.db.get_custody(item["evidence_id"])]
         report = {
@@ -77,27 +78,32 @@ class ReportService:
     def _render(report, output_format):
         if output_format == "json":
             return json.dumps(report, indent=2, ensure_ascii=False).encode("utf-8")
+        lines = [f"Report: {report['report_id']}", f"Case: {report['case_id']}"]
+        for email in report["observed_evidence"].get("emails", []):
+            lines.append("Email: " + str(email.get("email_id")))
+            lines.extend(explanation_lines(email.get("explanation") or explain_analysis(email)))
+        lines.extend(["Evidence integrity:", f"Evidence count: {report['evidence_count']}; integrity verified: {report['integrity_verified']}"])
+        lines.extend(f"{item.get('evidence_id')}: {item.get('sha256')}" for item in report.get("evidence_inventory", []))
+        lines.extend(["Report limitations:", *report["limitations"], report["attribution_disclaimer"]])
         if output_format == "html":
-            sections = []
-            for title, value in (("Observed Evidence", report["observed_evidence"]), ("Analytical Findings", report["analytical_findings"]), ("Correlation Results", report["campaign_relationships"]), ("Evidence Inventory", report["evidence_inventory"]), ("Chain of Custody", report["chain_of_custody"]), ("Confidence and Limitations", report["limitations"]), ("Recommended Actions", report["recommended_actions"]), ("Attribution Disclaimer", report["attribution_disclaimer"])):
-                sections.append(f"<h2>{html.escape(title)}</h2><pre>{html.escape(json.dumps(value, indent=2, ensure_ascii=False, default=str))}</pre>")
-            return ("<!doctype html><html><head><meta charset='utf-8'><title>Forensic Report " + html.escape(report["report_id"]) + "</title></head><body><h1>NETRA-Mail Forensic Report</h1>" + "".join(sections) + "</body></html>").encode("utf-8")
+            narrative = "".join("<p>" + html.escape(str(line)) + "</p>" for line in lines)
+            technical = "<details><summary>Technical evidence, custody and analyst records</summary><pre>" + html.escape(json.dumps(report, indent=2, ensure_ascii=False, default=str)) + "</pre></details>"
+            return ("<!doctype html><html><head><meta charset='utf-8'><title>NETRA Forensic Report</title><style>body{font:17px Arial;max-width:1000px;margin:40px auto;padding:20px;line-height:1.5}p{overflow-wrap:anywhere}pre{white-space:pre-wrap}</style></head><body><h1>NETRA-Mail Forensic Report</h1>" + narrative + technical + "</body></html>").encode("utf-8")
         if canvas is None:
             raise RuntimeError("PDF support is unavailable")
         from io import BytesIO
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+        from reportlab.lib.styles import getSampleStyleSheet
         stream = BytesIO()
-        document = canvas.Canvas(stream, pagesize=letter)
-        document.setTitle("NETRA-Mail Forensic Report")
-        y = 760
-        hash_lines = [f"{item.get('evidence_id')}: {item.get('sha256')}" for item in report.get("evidence_inventory", [])]
-        for line in (f"NETRA-Mail Forensic Report: {report['report_id']}", f"Case: {report['case_id']}", f"Evidence count: {report['evidence_count']}", f"Integrity verified: {report['integrity_verified']}", "", "Evidence hashes:", *hash_lines, "", "Limitations:", *report["limitations"], "", report["attribution_disclaimer"]):
-            for wrapped in [line[index:index + 95] for index in range(0, len(line), 95)] or [""]:
-                document.drawString(45, y, wrapped)
-                y -= 14
-                if y < 45:
-                    document.showPage()
-                    y = 760
-        document.save()
+        styles = getSampleStyleSheet()
+        styles["BodyText"].wordWrap = "CJK"
+        story = [Paragraph("NETRA-Mail Forensic Report", styles["Title"])]
+        for line in lines:
+            story.extend([Paragraph(html.escape(str(line)), styles["BodyText"]), Spacer(1, 6)])
+        for title, key in (("Correlation evidence", "campaign_relationships"), ("Chain of custody", "chain_of_custody"), ("Analyst notes", "analyst_notes"), ("Timeline", "timeline")):
+            story.append(Paragraph(title, styles["Heading2"]))
+            story.append(Paragraph(html.escape(json.dumps(report.get(key, []), ensure_ascii=False, default=str)), styles["BodyText"]))
+        SimpleDocTemplate(stream, pagesize=letter, title="NETRA-Mail Forensic Report").build(story)
         return stream.getvalue()
 
     def get(self, report_id: str):
