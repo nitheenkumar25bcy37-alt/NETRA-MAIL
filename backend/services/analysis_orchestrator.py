@@ -556,7 +556,7 @@ class AnalysisOrchestrator:
         # ==============================================================
 
         # Generic request words are not independent authority evidence.
-        generic = {"required", "requires", "request", "requested", "please", "action required"}
+        generic = {"require", "required", "requires", "request", "requested", "please", "action required"}
         social = [cue for cue in social if str(cue).lower() not in generic]
         if "social_engineering" in nlp.get("categories", {}):
             nlp["categories"]["social_engineering"] = [
@@ -622,7 +622,13 @@ class AnalysisOrchestrator:
             )
 
         strong_financial = [cue for cue in financial if str(cue).lower() not in {"money"}]
-        strong_authority = [cue for cue in social if str(cue).lower() not in {"click here", "click", "link"}]
+        strong_authority = [
+            cue for cue in social
+            if str(cue).lower() not in {
+                "click here", "click", "link", "require", "required", "requires",
+                "request", "requested", "please", "action required",
+            }
+        ]
         if strong_financial and strong_authority:
             findings.append(
                 self._finding(
@@ -750,12 +756,20 @@ class AnalysisOrchestrator:
         parsed["url_reputation"] = reputation
         findings.extend(reputation.get("findings", []))
         suspicious_urls = [item for item in url_result.get("urls", []) if int(item.get("risk_score", 0)) >= 35 and not aligned_first_party(item)]
-        if credentials and suspicious_urls:
+        weak_credential_context = {
+            "authentication", "card details", "credit card", "debit card",
+            "log in", "login", "verification", "verify", "account",
+        }
+        strong_credentials = [
+            cue for cue in credentials
+            if str(cue).strip().lower() not in weak_credential_context
+        ]
+        if strong_credentials and suspicious_urls:
             findings.append(self._finding(
                 "Text", "credential_request_with_suspicious_link", "high", 0.9,
                 "Credential request includes a suspicious link",
                 "Credential-related language is paired with a URL that has independent suspicious characteristics.",
-                {"suspicious_url_count": len(suspicious_urls), "credential_cues": credentials[:5]},
+                {"suspicious_url_count": len(suspicious_urls), "credential_cues": strong_credentials[:5]},
             ))
 
         # ==============================================================

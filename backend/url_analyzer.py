@@ -17,7 +17,7 @@ import ipaddress
 import math
 import re
 from collections import Counter
-from urllib.parse import unquote, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
 
 class URLAnalyzer:
@@ -72,6 +72,7 @@ class URLAnalyzer:
             "gmail.com",
             "googleapis.com",
             "gstatic.com",
+            "googleusercontent.com",
         ],
         "Apple": [
             "apple.com",
@@ -620,6 +621,10 @@ class URLAnalyzer:
 
             "ssrf_risk": False,
 
+            "redirect_wrapper": None,
+
+            "redirect_target": None,
+
             "ml_analysis": {
                 "available": False,
                 "used_in_score": False,
@@ -668,6 +673,28 @@ class URLAnalyzer:
             parsed.scheme.lower()
             == "https"
         )
+
+        # Gmail commonly rewrites legitimate links through Google's /url
+        # redirect endpoint. Analyze the embedded destination instead of
+        # treating wrapper length and encoded parameters as attacker signals.
+        if (
+            hostname in {"google.com", "www.google.com"}
+            and parsed.path.rstrip("/") == "/url"
+        ):
+            query_values = parse_qs(parsed.query, keep_blank_values=False)
+            target_values = query_values.get("q") or query_values.get("url") or []
+            target = str(target_values[0]).strip() if target_values else ""
+            target_parsed = urlparse(target)
+            if target and target != str(url) and target_parsed.scheme in {"http", "https"} and target_parsed.hostname:
+                nested = cls.analyze_url(target)
+                nested["url"] = str(url)
+                nested["redirect_wrapper"] = hostname
+                nested["redirect_target"] = target
+                nested["risk_reasons"] = list(dict.fromkeys([
+                    "Known Google redirect wrapper; embedded destination analyzed directly",
+                    *nested.get("risk_reasons", []),
+                ]))
+                return nested
 
         # --------------------------------------------------------
         # Basic measurements
@@ -1739,7 +1766,12 @@ class URLAnalyzer:
                 continue
             hostname = (parsed.hostname or "").lower()
             visible = str(reference.get("visible_text", ""))
-            visible_host = (urlparse(visible).hostname or "").lower() if "://" in visible else ""
+            visible_urls = cls.extract_urls(visible)
+            visible_host = (
+                (urlparse(visible_urls[0]).hostname or "").lower()
+                if visible_urls
+                else ""
+            )
             result["registered_domain"] = cls._base_domain(hostname)
             result["port"] = parsed.port
             result["path"] = parsed.path
