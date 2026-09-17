@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "created_at": "2026-09-17T16:40:24.225268+00:00",
+  "record_count": 399,
+  "chain_hash": "c6bfe6344ee6314691edf94fb86f137d9de5f31d1bdbbcd8df7dd20018339286",
+  "scope": "Configured local legacy evidence-record chain only; not the Render database or separate custody chains",
+  "publication": "The containing remote Git commit anchors this checkpoint; a local file alone does not."
+}

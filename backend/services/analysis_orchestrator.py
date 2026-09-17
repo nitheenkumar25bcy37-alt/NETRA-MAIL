@@ -7,6 +7,9 @@ from uuid import uuid4
 from backend.attachment_analyzer import AttachmentAnalyzer
 from backend.header_analyzer import HeaderForensicAnalyzer
 from backend.nlp_engine import NLPEngine
+# Resolve sklearn imports before concurrent first requests can interleave module locks.
+from backend.ml_classifier import LocalMLClassifier
+from backend.services.phrase_similarity import inspect_phrases
 from backend.parser import ForensicEmailParser
 
 from backend.schemas.findings import (
@@ -36,7 +39,7 @@ except Exception:
     URLAnalyzer = None
 class AnalysisOrchestrator:
     """
-    Pure, dependency-light v2 analysis pipeline.
+    V2 analysis pipeline with explicitly provisioned local models.
 
     Multilingual support:
     - Detects supported Indian languages.
@@ -47,7 +50,7 @@ class AnalysisOrchestrator:
     - Language alone is never considered malicious.
     """
 
-    VERSION = "4.4.1"
+    VERSION = "4.5.0"
 
     def __init__(
         self,
@@ -403,34 +406,8 @@ class AnalysisOrchestrator:
             {},
         ) or {}
 
-        text = "\n".join(
-            str(value)
-            for value in (
-                metadata.get(
-                    "subject",
-                    "",
-                ),
-                metadata.get(
-                    "from",
-                    "",
-                ),
-                body.get(
-                    "plain",
-                    "",
-                ),
-                body.get(
-                    "visible_text",
-                    "",
-                ),
-            )
-        )
-
-        image_text = "\n".join(
-            str(item.get("image_analysis", {}).get("ocr_text", ""))
-            for item in parsed.get("attachments", [])
-        )[:20000]
-        if image_text:
-            text += "\n" + image_text
+        from backend.services.email_features import email_feature_text
+        text = email_feature_text(parsed)
 
         # ==============================================================
         # 2. EXISTING NLP
@@ -505,6 +482,7 @@ class AnalysisOrchestrator:
         findings: List[Finding] = []
         from backend.services.content_signals import inspect_content
         findings.extend(inspect_content(text, str(body.get("html", ""))))
+        findings.extend(inspect_phrases(text))
 
         # --------------------------------------------------------------
         # MULTILINGUAL FINDINGS
@@ -668,6 +646,14 @@ class AnalysisOrchestrator:
         verified = parsed["verified_authentication"]
         for item in header.get("findings", []):
             item = dict(item)
+            if item.get("rule") in {"spf_failure", "dkim_failure", "dmarc_failure", "spf_misalignment", "dkim_misalignment", "dmarc_misalignment"}:
+                item["severity"] = "info"
+                item.setdefault("limitations", []).append("Uploaded authentication claims are not independent verification; trusted failures are recorded separately.")
+            if item.get("rule") in {"from_return_path_mismatch", "from_reply_to_mismatch", "received_timestamp_order", "malformed_received"}:
+                item["severity"] = "low"
+                item.setdefault("limitations", []).append("Infrastructure and forwarding differences are weak context; they do not independently establish an attack.")
+            if item.get("rule") == "message_id_domain_mismatch":
+                item["severity"] = "info"
             if verified["dmarc"]["status"] == "pass" and item.get("rule") in {"spf_misalignment", "dkim_misalignment", "dmarc_misalignment"}:
                 item["severity"] = "info"
                 item.setdefault("limitations", []).append("Verified DMARC passed through at least one aligned identifier.")
@@ -680,6 +666,9 @@ class AnalysisOrchestrator:
             "independently_verified": False,
             "limitations": ["Supplied authentication headers may be forged. Refer to verified_authentication for local DKIM checks."]
         }
+        if verified.get("spf", {}).get("status") == "fail" and verified.get("spf", {}).get("source") in {"trusted_receiver", "trusted_smtp_context"}:
+            findings.append(Finding(category="Authentication", rule="trusted_spf_failure", severity="medium", confidence=.9,
+                title="Trusted delivery receiver reported SPF failure", description="The SMTP sending IP failed the receiving provider's authorization check.", evidence=verified["spf"], limitations=verified["limitations"]))
         if verified["dkim"]["status"] == "fail":
             findings.append(Finding(
                 category="Authentication", rule="local_dkim_failure", severity="medium",
@@ -798,7 +787,7 @@ class AnalysisOrchestrator:
                 continue
             severity = "critical" if score >= 75 else "high" if score >= 50 else "medium"
             findings.append(Finding(
-                category="Attachment", rule="attachment_static_" + severity,
+                category="Attachment", rule="attachment_hash_blocklist" if attachment.get("reputation", {}).get("matched") else "attachment_static_" + severity,
                 severity=severity, confidence=0.95,
                 title="Potentially dangerous attachment",
                 description="; ".join(attachment.get("reasons", [])),
@@ -939,7 +928,6 @@ class AnalysisOrchestrator:
         # 13. EMAIL ML AS CORROBORATED SUPPORTING EVIDENCE
         # ==============================================================
 
-        from backend.ml_classifier import LocalMLClassifier
         try:
             ml_analysis = {"available": True, **LocalMLClassifier.predict(text)}
             probability = float(ml_analysis.get("phishing_probability", 0.0))
@@ -949,7 +937,17 @@ class AnalysisOrchestrator:
                 in {"medium", "high", "critical"}
             ]
             ml_analysis["used_in_decision"] = False
-            if probability >= 0.55 and corroborating:
+            hard_structural = any(str(getattr(item, "severity", item.get("severity", "info") if isinstance(item, dict) else "info")).lower() in {"high", "critical"} for item in findings)
+            if ml_analysis.get("calibration_status") == "platt_scaling" and probability >= 0.60 and not hard_structural:
+                findings.append(self._finding(
+                    "Machine learning", "calibrated_ml_review", "medium", probability,
+                    "Calibrated text model requests review",
+                    "Structural evidence is inconclusive; the calibrated text model detects attack-like language. This is an inconclusive review, not confirmed phishing.",
+                    {"phishing_probability": round(probability, 4), "threshold": 0.60},
+                    ml_analysis.get("limitations", []),
+                ))
+                ml_analysis["used_in_decision"] = True
+            if probability >= 0.55 and corroborating and not hard_structural and not ml_analysis["used_in_decision"]:
                 severity = "medium" if probability >= 0.75 and len(corroborating) >= 2 else "low"
                 findings.append(self._finding(
                     "Machine learning", "corroborated_email_ml", severity,
@@ -993,6 +991,7 @@ class AnalysisOrchestrator:
             normalized_findings,
             nlp,
         )
+        parsed["risk_decision"] = risk
 
         # ==============================================================
         # 16. MULTILINGUAL RESULT

@@ -2,6 +2,8 @@ import csv
 import os
 import hashlib
 import io
+import json
+import math
 from threading import RLock
 from pathlib import Path
 from typing import Dict, List
@@ -103,10 +105,30 @@ class LocalMLClassifier:
         probability_map = dict(zip(classes, probabilities))
         phishing_probability = float(probability_map.get("PHISHING", 0.0))
 
+        raw_probability = phishing_probability
+        calibration_status = "not_configured"
+        calibration_path = Path(os.getenv("NETRA_ML_CALIBRATION", str(cls.MODEL_PATH.parent / "email_probability_calibration.json")))
+        if calibration_path.exists():
+            try:
+                params = json.loads(calibration_path.read_text(encoding="utf-8"))
+                if params["model_sha256"] != hashlib.sha256(cls.MODEL_PATH.read_bytes()).hexdigest():
+                    raise ValueError("Calibration belongs to a different model")
+                slope, intercept = float(params["slope"]), float(params["intercept"])
+                if not params.get("activated", False) or not math.isfinite(slope) or not math.isfinite(intercept) or not 0 < slope <= 100 or abs(intercept) > 100:
+                    raise ValueError("Invalid calibration parameters")
+                logit = math.log(max(1e-6, raw_probability) / max(1e-6, 1-raw_probability))
+                value = max(-30, min(30, float(params["slope"])*logit + float(params["intercept"])))
+                phishing_probability = 1/(1+math.exp(-value))
+                calibration_status = "platt_scaling"
+                prediction = "PHISHING" if phishing_probability >= .5 else "LEGITIMATE"
+            except (OSError, ValueError, KeyError, TypeError):
+                calibration_status = "invalid_or_stale"
         return {
+            "raw_phishing_probability": round(raw_probability, 4),
+            "calibration_status": calibration_status,
             "classification": prediction,
             "phishing_probability": round(phishing_probability, 4),
-            "confidence": round(max(probabilities) * 100, 2),
+            "confidence": round(max(phishing_probability, 1-phishing_probability) * 100, 2),
             "model": "TF-IDF + Logistic Regression",
             "training_source": "unverified model artifact provenance",
             "limitations": ["Model probabilities are not calibrated safety guarantees.", "Independent end-to-end evaluation is required."],

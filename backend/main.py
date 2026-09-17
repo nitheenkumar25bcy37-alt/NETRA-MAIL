@@ -50,7 +50,7 @@ from fastapi import (
 )
 
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response
+from fastapi.responses import Response, JSONResponse
 from pydantic import BaseModel
 from backend.security import RequestRateLimiter, validate_identifier, valid_api_key
 from backend.access_control import AccessPolicy, Principal
@@ -196,6 +196,8 @@ def _client_rate_limit_key(request: Request) -> str:
 
 def _enforce_rate_limit(request: Request) -> None:
     """Reject clients that exceed the configured analysis request limit."""
+    if getattr(request.state, "rate_limit_checked", False):
+        return
     key = _client_rate_limit_key(request)
     if rate_limiter.allow(key):
         return
@@ -272,9 +274,16 @@ async def deployment_access_control(request: Request, call_next):
             and NETRA_EXTENSION_ORIGIN
             and origin == NETRA_EXTENSION_ORIGIN
             and request.method == "POST"
-            and request.url.path in {"/api/v2/emails/analyze", "/api/v2/mailbox/analyze"}
+            and request.url.path == "/api/v2/mailbox/analyze"
         ):
             identity = Principal("gmail-extension", "submitter")
+        if identity is not None and request.method in {"POST", "PUT", "PATCH", "DELETE"}:
+            request.state.principal = identity
+            try:
+                _enforce_rate_limit(request)
+            except HTTPException as exc:
+                return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+            request.state.rate_limit_checked = True
         if identity is None:
             return Response(
                 content='{"detail":"Authentication required"}',

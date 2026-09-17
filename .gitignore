@@ -25,3 +25,12 @@ token.json
 *.db
 *.sqlite
 *.sqlite3
+
+# Public email corpora and runtime intelligence caches
+.local-corpora/
+data/intelligence_cache/
+data/geoip_cache/
+
+# Duplicate raw URL benchmark reports remain local
+evaluation_results/upgrades/baseline_url/url_results.csv
+evaluation_results/upgrades/final_url/url_results.csv

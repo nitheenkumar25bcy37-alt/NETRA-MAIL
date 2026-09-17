@@ -1,0 +1,167 @@
+{
+  "scope": "synthetic regression only; not real-world detection accuracy",
+  "pipeline_version": "4.5.0",
+  "threshold": 25,
+  "network": "disabled",
+  "total": 20,
+  "errors": 0,
+  "tp": 15,
+  "tn": 4,
+  "fp": 0,
+  "fn": 1,
+  "precision": 1.0,
+  "recall": 0.9375,
+  "f1": 0.967741935483871,
+  "false_positive_rate": 0.0,
+  "successful_case_accuracy": 0.95,
+  "end_to_end_correct_fraction": 0.95,
+  "latency_mean_seconds": 0.47499733500444563,
+  "latency_p95_seconds": 1.0755047000129707,
+  "rows": [
+    {
+      "path": "01_legitimate_meeting.eml",
+      "sha256": "3577928f2dcd03e48cd579180490c55d04aaca506cce7b130965028bd0aee3e4",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 0
+    },
+    {
+      "path": "02_legitimate_business.eml",
+      "sha256": "874afa2e78c7dc2b8ffc1f4bdacf109cfbbee6b60f98d2df9c6154dc4ea90b81",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 0
+    },
+    {
+      "path": "03_credential_phishing.eml",
+      "sha256": "3ea1051a6d06390fa398edc1bf490e25e34c2c08fd335a602258cceabf9283b8",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 66
+    },
+    {
+      "path": "04_urgent_phishing.eml",
+      "sha256": "1fa94ea6118cadee998caa7022d54bd803f16e402cc00c90067513d73b593320",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 66
+    },
+    {
+      "path": "05_bec_payment.eml",
+      "sha256": "7f9374e5e5bc71305f6722dab37e9b5f70a5932182b66a47fbcb0b0a6cf09878",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 63
+    },
+    {
+      "path": "06_suspicious_url.eml",
+      "sha256": "3ab9b5df696f1e6da9ccf6dd692dafd217ee9de96931c5539b42b8c4184debfe",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 92
+    },
+    {
+      "path": "07_ssrf_localhost.eml",
+      "sha256": "9aafd9fed4d868abd06647459da1d2cc934fee14944b6813f68f296529a2b8e4",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 87
+    },
+    {
+      "path": "08_executable_attachment.eml",
+      "sha256": "7ac5ee9c84d46b216b5fe7601d42185bd8eec8295dc757f4f40a01add2d08f74",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 75
+    },
+    {
+      "path": "09_double_extension.eml",
+      "sha256": "0eeb09c9468323cf2fec7f533f7e01b6fa0d7f120c5d104ea15956d209e66fd5",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 75
+    },
+    {
+      "path": "10_macro_document.eml",
+      "sha256": "eba450eaa9ba0c968a60b2a8a5bc413db421b97ba9c9c95d1ffb773a7d942929",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 50
+    },
+    {
+      "path": "11_html_attachment.eml",
+      "sha256": "1d30f64766a949c3c0210ac29d390631f2e8a8eb1f23a785345d1f6c06d2cbef",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 50
+    },
+    {
+      "path": "12_svg_attachment.eml",
+      "sha256": "0b0b0d6c074065f397637ae66f07366749866a3e740048c75bf9cc7d34ad60b4",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 50
+    },
+    {
+      "path": "13_suspicious_archive.eml",
+      "sha256": "fc9926685e079e6ded26fbf843fa0f301ef2ef66d4b0630c7cf3c7b157fffd06",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 25
+    },
+    {
+      "path": "14_mime_mismatch.eml",
+      "sha256": "c0d92740f597a7be4d7201b5700ea0bfd184bbe4a962a8d71cdd593b9888bcc7",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 75
+    },
+    {
+      "path": "15_punycode_url.eml",
+      "sha256": "b1250646b56b9d725309e7c131943f7a2a03c714914b9e6bbe00a168e8a0e49e",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 100
+    },
+    {
+      "path": "16_raw_ip_url.eml",
+      "sha256": "f9a76d608d15a662c52908d4e11422f8c0146f784c22280537ff064e1da4740e",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 73
+    },
+    {
+      "path": "17_reply_to_mismatch.eml",
+      "sha256": "ded68b8a733b857476327add088dd00789b146c12ae8ac55c2348492189ea082",
+      "expected": true,
+      "predicted": false,
+      "risk_score": 8
+    },
+    {
+      "path": "18_mixed_attack.eml",
+      "sha256": "350857bc447c315bade8b8bdb885b4f706099349770afecf73eb1e7ad433a36e",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 100
+    },
+    {
+      "path": "19_malformed_like.eml",
+      "sha256": "82d7688a575f1d918c610726ba2d257f1012cf0c47fbfaa4b37b41a8e5ed15cf",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 5
+    },
+    {
+      "path": "20_authentication_unavailable.eml",
+      "sha256": "f658e2ba016eb4fd8cc660d1e6a58d451e5a045b3a3c42c5bbdcfbd27c76f66d",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 0
+    }
+  ],
+  "limitations": [
+    "No production-accuracy claim. External intelligence and local DKIM verification are excluded.",
+    "Supplied dataset independence and provenance must be checked separately.",
+    "Errors are reported separately, not silently counted as safe."
+  ]
+}

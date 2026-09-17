@@ -875,11 +875,12 @@ class URLAnalyzer:
 
             result["punycode"] = True
 
-            result["risk_score"] += 25
-
-            result["risk_reasons"].append(
-                "Hostname contains IDN/punycode or non-ASCII characters"
-            )
+            from backend.domain_confusables import inspect_hostname
+            confusable = inspect_hostname(hostname, cls.BRANDS)
+            result["homograph"] = confusable
+            if confusable["lookalike"]:
+                result["risk_score"] += 35
+                result["risk_reasons"].append("Internationalized hostname resembles a protected brand")
 
         # --------------------------------------------------------
         # Suspicious TLD
@@ -1789,7 +1790,7 @@ class URLAnalyzer:
             rules = []
             if result.get("is_shortener"):
                 rules.append(("url_shortener", "medium", 0.88, "URL shortener detected", "The destination is obscured behind a known URL shortening service."))
-            if result.get("punycode") or result.get("mixed_script"):
+            if result.get("homograph", {}).get("lookalike"):
                 rules.append(("idn_or_mixed_script", "high", 0.91, "Internationalized or mixed-script hostname detected", "The hostname uses IDN, punycode, or non-ASCII characters that can resemble another domain."))
             if result.get("is_ip_address"):
                 rules.append(("ip_based_url", "medium", 0.86, "URL uses an IP address", "The link uses a raw IP address instead of a registered domain."))

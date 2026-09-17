@@ -1,3 +1,5 @@
+> Current upgrade evidence: [4.5.0 measured validation](../docs/UPGRADE_VALIDATION.md). API identities and scoped authorization are already implemented; weighted-indicator correlation is described in [correlation scope](../docs/CORRELATION_SCOPE.md).
+
 > **4.4.0 implementation candidate:** Start with [the current setup runbook](../docs/INSPECTION_AND_RELEASE.md) and [stage status](../docs/IMPLEMENTATION_STAGES.md). Attachment content inspection now requires the Docker worker image; testing and release acceptance are deferred.
 
 Start the local dashboard with `python scripts/start_dashboard.py`; this binds

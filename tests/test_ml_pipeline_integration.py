@@ -28,7 +28,7 @@ def test_url_ml_supports_independent_structural_evidence_on_unseen_domain():
     assert result["suspicious_keywords"]
 
 
-def test_email_ml_is_connected_only_when_explainable_evidence_corroborates():
+def test_structural_detection_takes_priority_over_email_ml():
     orchestrator = AnalysisOrchestrator()
     orchestrator.domain_provider.inspect = lambda *args, **kwargs: {"findings": []}
     phishing = orchestrator.analyze(_email(
@@ -36,8 +36,9 @@ def test_email_ml_is_connected_only_when_explainable_evidence_corroborates():
         "Login immediately and verify your password at https://netra-judge-93817.top/account/login/verify",
     ))
     assert phishing.parsed["ml_analysis"]["available"]
-    assert phishing.parsed["ml_analysis"]["used_in_decision"]
-    assert any(item.rule == "corroborated_email_ml" for item in phishing.findings)
+    assert not phishing.parsed["ml_analysis"]["used_in_decision"]
+    assert phishing.risk_score >= 35
+    assert any(item.rule == "contextual_social_engineering" for item in phishing.findings)
 
     safe = orchestrator.analyze(_email(
         "Project meeting",

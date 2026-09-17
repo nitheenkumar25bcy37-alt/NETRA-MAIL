@@ -113,6 +113,10 @@ def render_email(email_id: str):
     c2.metric("Evidence hash", str(result.get("evidence", {}).get("sha256", "Unavailable"))[:18] + "...")
     c3.metric("Analysis version", result.get("evidence", {}).get("analysis_version", "Unknown"))
     st.caption(view["confidence_note"])
+    decision = result.get("parsed", {}).get("risk_decision", {})
+    for escalation in decision.get("escalations", []):
+        st.warning("High-risk handling rule: " + escalation.get("reason", "Critical evidence requires review"))
+
     tabs = st.tabs(["Why this result?", "Origin trace", "Relationships", "Limitations"])
     with tabs[0]:
         st.subheader("Why NETRA reached this result")

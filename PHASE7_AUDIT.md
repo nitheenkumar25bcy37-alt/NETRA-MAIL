@@ -1,3 +1,5 @@
+> Historical audit. For current authentication, detector behavior and measured limits, see [upgrade validation](docs/UPGRADE_VALIDATION.md); earlier missing-auth observations must not be presented as the current implementation.
+
 # Phase 7 Audit
 
 ## Current architecture

@@ -1,0 +1,12 @@
+{
+  "activated": true,
+  "calibration_samples": 200,
+  "test_samples": 200,
+  "validation_brier_before": 0.22880404042600447,
+  "validation_brier_after": 0.18297517179053385,
+  "test_brier_before": 0.23046580849271792,
+  "test_brier_after": 0.18286099463281727,
+  "test_logloss_before": 0.653965920043149,
+  "test_logloss_after": 0.5532049485287214,
+  "scope": "ML probability only, same plain/visible-HTML features as production. Optional image OCR excluded from calibration."
+}

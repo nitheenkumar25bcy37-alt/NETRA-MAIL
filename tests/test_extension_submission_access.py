@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 from backend.access_control import AccessPolicy
 
 
-def test_configured_extension_can_analyze_without_shared_key(monkeypatch):
+def test_extension_origin_alone_cannot_authorize_reconstructed_email(monkeypatch):
     import backend.main as main
 
     origin = "chrome-extension://knckclcnbppcnhinmehnpajloflmjcgm"
@@ -27,8 +27,7 @@ def test_configured_extension_can_analyze_without_shared_key(monkeypatch):
         headers={"Origin": origin},
         json={"subject": "Project meeting", "body": "Tomorrow at ten."},
     )
-    assert response.status_code == 200, response.text
-    assert "correlation" not in response.json()
+    assert response.status_code == 401, response.text
 
     # The original-message route has the same scoped submission identity.
     invalid_original = client.post("/api/v2/mailbox/analyze", headers={"Origin": origin}, json={})

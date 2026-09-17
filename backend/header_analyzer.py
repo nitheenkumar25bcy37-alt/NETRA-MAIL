@@ -30,8 +30,14 @@ class HeaderForensicAnalyzer:
         if domains["from"] and domains["return_path"] and not cls._aligned(domains["from"], domains["return_path"]):
             findings.append(cls._finding("from_return_path_mismatch", "medium", 0.92, "From and Return-Path domains differ", "The envelope return path is not aligned with the displayed sender domain.", {"from": domains["from"], "return_path": domains["return_path"]}, category="Sender identity"))
         display_name = cls._display_name(meta.get("from", ""))
-        if display_name and any(brand in display_name.lower() for brand in cls.BRANDS) and not any(brand in domains["from"] for brand in cls.BRANDS):
+        display_brands = [brand for brand in cls.BRANDS if re.search(r"\b" + re.escape(brand) + r"\b", display_name.lower())]
+        official = {"paypal": ["paypal.com"], "microsoft": ["microsoft.com", "outlook.com"], "google": ["google.com"], "apple": ["apple.com"], "amazon": ["amazon.com", "amazon.in"], "dhl": ["dhl.com"], "fedex": ["fedex.com"], "netflix": ["netflix.com"], "linkedin": ["linkedin.com"], "github": ["github.com"], "sbi": ["sbi.co.in", "sbi.bank"], "hdfc": ["hdfcbank.com"], "icici": ["icicibank.com"]}
+        if display_brands and not any(domains["from"] == domain or domains["from"].endswith("." + domain) for brand in display_brands for domain in official.get(brand, [])):
             findings.append(cls._finding("display_name_impersonation", "high", 0.8, "Display name resembles a known brand", "The display name invokes a known brand while the sender domain does not align with that brand.", {"display_name": display_name, "from_domain": domains["from"]}, category="Sender identity"))
+        from backend.domain_confusables import inspect_hostname
+        homograph = inspect_hostname(domains["from"], cls.BRANDS)
+        if homograph["lookalike"]:
+            findings.append(cls._finding("sender_homograph", "high", .9, "Sender domain resembles a protected brand", "Confusable characters can disguise a different sender domain.", homograph, category="Sender identity"))
         for name, status in statuses.items():
             if status == "fail":
                 findings.append(cls._finding(f"{name}_failure", "medium", 0.9, f"{name.upper()} authentication failed", "Authentication failure is a risk signal, but authentication success does not prove that the message is safe.", {name: status}))
@@ -61,7 +67,7 @@ class HeaderForensicAnalyzer:
                 if classification in {"private", "reserved", "loopback"}:
                     findings.append(cls._finding("non_public_origin_ip", "info", 0.9, "Non-public IP appears in relay evidence", "Private, reserved, or loopback addresses cannot establish a public origin.", {"ip": ip, "classification": classification, "hop": hop.get("hop_index")}, ["Private relay addresses are common inside legitimate mail systems."]))
         timestamps = [cls._timestamp(hop.get("timestamp")) for hop in chain]
-        valid = [stamp for stamp in timestamps if stamp]
+        valid = [stamp for stamp in timestamps if stamp and stamp.tzinfo is not None]
         if len(valid) > 1 and any(left < right for left, right in zip(valid, valid[1:])):
             findings.append(cls._finding("received_timestamp_order", "medium", 0.78, "Received timestamps are inconsistent", "The observed header order contains timestamps that do not follow normal relay chronology.", {"timestamps": [stamp.isoformat() for stamp in valid]}))
         return findings

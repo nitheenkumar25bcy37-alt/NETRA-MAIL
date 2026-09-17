@@ -1,0 +1,13 @@
+{
+  "pipeline_version": "4.5.0",
+  "messages": 100,
+  "concurrency": 10,
+  "errors": 1,
+  "skipped_attachments": 10,
+  "wall_seconds": 9.798738699988462,
+  "throughput_per_second": 10.205395108670237,
+  "p50_seconds": 0.3114993500057608,
+  "p95_seconds": 4.742880600009812,
+  "p99_seconds": 4.966804900002899,
+  "scope": "Local offline full pipeline; DNS, DKIM DNS, ARC and external reputation/expansion disabled. Includes worker availability limits; not a Render HTTP load test."
+}

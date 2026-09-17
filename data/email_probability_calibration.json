@@ -1,0 +1,11 @@
+{
+  "method": "Platt scaling",
+  "slope": 4.443294260198798,
+  "intercept": 0.05719125696694623,
+  "model_sha256": "5e7a38847c336d96dad021542d5a85379efa448b70ca83bf1eac3cb58944c717",
+  "samples": 200,
+  "activated": true,
+  "limitations": [
+    "Cross-corpus source and time shift; exact hashes disjoint, template overlap not excluded."
+  ]
+}

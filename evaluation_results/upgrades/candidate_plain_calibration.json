@@ -1,0 +1,12 @@
+{
+  "activated": true,
+  "calibration_samples": 200,
+  "test_samples": 200,
+  "validation_brier_before": 0.2319562095629652,
+  "validation_brier_after": 0.20454886095061459,
+  "test_brier_before": 0.23218492166465934,
+  "test_brier_after": 0.19801381746490432,
+  "test_logloss_before": 0.6574063961843568,
+  "test_logloss_after": 0.5857171620675649,
+  "scope": "ML probability only, not full-pipeline confidence"
+}

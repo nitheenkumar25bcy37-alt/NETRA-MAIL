@@ -267,6 +267,8 @@ class AttachmentAnalyzer:
             # Metadata-only fallback preserves filename/magic findings and marks
             # missing content inspection explicitly; it never decodes a file.
             findings.append(cls._analyze_one(item))
+        from backend.attachment_reputation import apply_reputation
+        findings = [apply_reputation(dict(x)) for x in findings]
         highest = max((x["score"] for x in findings), default=0)
         suspicious = sum(1 for x in findings if x["suspicious"])
         reasons = []

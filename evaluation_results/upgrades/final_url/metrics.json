@@ -1,0 +1,20 @@
+{
+  "samples": 10000,
+  "tp": 2088,
+  "tn": 4756,
+  "fp": 244,
+  "fn": 2912,
+  "accuracy": 0.6844,
+  "precision": 0.8953687821612349,
+  "recall": 0.4176,
+  "f1": 0.5695581014729951,
+  "specificity": 0.9512,
+  "false_positive_rate": 0.0488,
+  "false_negative_rate": 0.5824,
+  "status": "OK",
+  "phishing_samples": 5000,
+  "legitimate_samples": 5000,
+  "total_samples": 10000,
+  "best_threshold_by_f1": 10,
+  "note": "Threshold selected by F1 on this benchmark. For publication, use a separate validation set to select a threshold and a final unseen test set to report performance."
+}
