@@ -44,6 +44,7 @@ def explain_analysis(result):
         "text_analysis": {"language": str(nlp.get("language") or multi.get("language") or "Not established"), "signals": signals, "summary": "These words are contextual clues. Ordinary payment or login language does not prove phishing." if signals else "No matching language cues were reported." if nlp or multi else "Detailed text output is unavailable in this older record. Reanalyze to capture it."},
         "url_analysis": {"urls": urls, "summary": f"{len(urls)} link(s) inspected. Link risk is separate from the overall email score." if urls else "No links were extracted from the captured content." if url_data else "Detailed URL output is unavailable in this record; this does not prove that it contains no links."},
         "authentication": authentication, "model": parsed.get("ml_analysis") or {},
+        "origin": explain_origin(parsed.get("origin_trace") or {}),
         "recommended_actions": ["Avoid email links for login or OTP submission.", "Verify payment or account changes through a known phone number or official website.", "Preserve the original message and request security review."] if concerning else ["Confirm the sender and expected context before acting.", "Visit the official website directly for sensitive actions.", "Provide the original .eml for full header and attachment checks."],
         "limitations": _list(result.get("limitations")),
     }
@@ -80,5 +81,80 @@ def explanation_lines(view):
     model = view["model"]
     lines.append("Email machine-learning support:")
     lines.append(f"Prediction: {model.get('classification', 'Not reported')}; {'used with corroborating evidence' if model.get('used_in_decision') else 'did not contribute to verdict'}." if model.get("available") else "Email model evidence unavailable. This is not a safe verdict.")
+    origin = view.get("origin")
+    if origin:
+        lines.extend(["Where did this email travel from?", origin["title"], origin["summary"], origin["sender_location"], origin["next_step"]])
+        for server in origin["servers"]:
+            lines.extend([f"Observed server IP: {server['ip']}", server["status"], server["explanation"], server["location"], server["network"], server["anonymization"]])
     lines.extend(["Suggested next steps:", *view["recommended_actions"], "Assessment limitations:", *view["limitations"]])
     return lines
+
+
+def explain_origin(trace):
+    """Describe observed server evidence without inferring a person's location."""
+    import ipaddress
+    import math
+    hops = trace.get("hops") or []
+    servers = []
+    seen = set()
+    for candidate in trace.get("origin_candidates") or []:
+        ip = str(candidate.get("ip") or "")
+        try:
+            if not ipaddress.ip_address(ip).is_global or ip in seen:
+                continue
+        except ValueError:
+            continue
+        seen.add(ip)
+        intel = candidate.get("intelligence") or {}
+        owner = str(intel.get("organization") or intel.get("isp") or "")
+        location_parts = list(dict.fromkeys(str(intel[k]) for k in ("city", "region", "country") if intel.get(k)))
+        coordinates = None
+        if intel.get("available"):
+            try:
+                lat, lon = float(intel.get("latitude")), float(intel.get("longitude"))
+                if math.isfinite(lat) and math.isfinite(lon) and -90 <= lat <= 90 and -180 <= lon <= 180:
+                    coordinates = {"lat": lat, "lon": lon, "ip": ip}
+            except (TypeError, ValueError):
+                pass
+        if not intel.get("available"):
+            status = "Server IP found; location lookup unavailable"
+            explanation = {
+                "unconfigured": "Location lookups are turned off or not configured for this deployment.",
+                "provider_rate_limited": "The location service has reached its request limit. Try again later.",
+                "provider_unavailable": "The location service could not return usable information. This does not mean the public IP is missing.",
+                "lookup_budget": "This server was not looked up because the analysis reached its lookup limit.",
+                "offline": "External location lookups were disabled for this offline analysis.",
+                "dashboard_lookup_failed": "The dashboard could not retrieve location information from NETRA. This is a data-access problem, not a missing public IP. Ask your administrator to check dashboard connectivity and access.",
+            }.get(intel.get("source"), "NETRA found a public server IP, but has no usable location-service result for it.")
+        elif location_parts or coordinates:
+            status = "Approximate mail-server location available"
+            explanation = "This location describes the observed network or mail server, not the person who wrote the email."
+            if not coordinates:
+                explanation += " No usable map coordinates were returned, so NETRA cannot place a map marker."
+        else:
+            status = "Server network information available; location unknown"
+            explanation = "The lookup returned network information but no usable location or map coordinates."
+        if "google" in owner.lower():
+            explanation += " The lookup identifies a Google network. For mail sent through Gmail, this can be Google's sending infrastructure; the user's own IP may not appear in the email."
+        reported = [label for flag, label in (("vpn", "VPN"), ("proxy", "proxy"), ("tor", "Tor")) if intel.get(flag) is True]
+        anonymization = "The provider reports " + ", ".join(reported) + " infrastructure. Its exit-server location does not reveal the user's original location or prove malicious activity." if reported else "VPN, proxy or Tor use could not be established from the available information. A VPN used to access Gmail may not appear in the email headers."
+        if not reported and all(intel.get(flag) is False for flag in ("vpn", "proxy", "tor")):
+            anonymization = "The provider did not flag this server as VPN, proxy or Tor infrastructure. This does not rule out a hidden VPN on the user's connection."
+        servers.append({"ip": ip, "status": status, "explanation": explanation,
+                        "location": "Approximate server location: " + (", ".join(location_parts) or "Not established"),
+                        "network": "Network operator: " + (owner or "Not established"),
+                        "anonymization": anonymization, "coordinates": coordinates})
+    if servers:
+        title = "Public mail-server IPs found"
+        summary = "NETRA keeps observed public IPs even when they belong to Gmail, a cloud service or a VPN. NETRA starts with the oldest visible public hop; incomplete or forged headers can mislead the trace. These are clues about email delivery, not proof of the sender's identity."
+        next_step = "Compare this route with sender identity checks and the email's text, links and attachments. An unfamiliar country alone does not make an email phishing."
+    elif hops:
+        title = "No public mail-server IP found in the captured headers"
+        summary = "Delivery records were captured, but NETRA could not extract a public server IP from them. Private/internal addresses cannot be used for public geolocation. This is missing origin evidence, not proof that the email is safe."
+        next_step = "Use Gmail original-message verification or upload the original .eml with full headers. Some providers still do not expose the user's IP."
+    else:
+        title = "Email delivery headers were not captured"
+        summary = "NETRA has no mail-server route to inspect in this record. It cannot invent an IP address or map location."
+        next_step = "Analyze the original email through Gmail verification or upload its original .eml file; reanalyze older records to capture their delivery headers."
+    return {"title": title, "summary": summary, "servers": servers, "next_step": next_step,
+            "sender_location": "Human sender location: not established. Headers may expose only mail servers or a VPN exit server. NETRA continues checking text, links, attachments and sender authentication when origin evidence is missing."}

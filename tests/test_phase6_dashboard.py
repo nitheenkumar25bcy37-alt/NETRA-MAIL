@@ -73,10 +73,13 @@ class Phase6DashboardTests(unittest.TestCase):
 
     def test_dashboard_explains_missing_origin_evidence(self):
         dashboard = Path("dashboard/app.py").read_text(encoding="utf-8")
-        self.assertIn("Origin trace unavailable for this analysis", dashboard)
-        self.assertIn("NETRA will not ", dashboard)
-        self.assertIn("invent an IP address or sender location", dashboard)
-        self.assertIn("original .eml message with full", dashboard)
+        from backend.presentation import explain_origin
+        self.assertIn("view_origin = explain_origin", dashboard)
+        view = explain_origin({})
+        self.assertIn("headers were not captured", view["title"])
+        self.assertIn("cannot invent an IP address", view["summary"])
+        self.assertIn("original .eml", view["next_step"])
+
 
 
 if __name__ == "__main__":

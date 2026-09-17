@@ -9,7 +9,7 @@ import streamlit as st
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from dashboard.api_client import APIClient
-from backend.presentation import explain_analysis
+from backend.presentation import explain_analysis, explain_origin
 
 
 st.set_page_config(page_title="NETRA-Mail Investigation", page_icon="N", layout="wide")
@@ -177,75 +177,50 @@ def render_email(email_id: str):
         with st.expander("Technical data for analysts"):
             st.json({"analysis": result, "findings": findings})
     with tabs[1]:
+        st.subheader("Where did this email travel from?")
         if trace_error:
-            st.error(trace_error)
+            st.error("The delivery-route report could not be loaded. This is a report-access problem; it does not establish whether the email contains a public IP.")
+            with st.expander("Technical details for support"):
+                st.write(trace_error)
         else:
-            hops = trace.get("hops", []) or []
-            candidates = trace.get("origin_candidates", []) or []
-            limitations = trace.get("limitations", []) or []
-
-            if not hops:
-                st.warning("Origin trace unavailable for this analysis")
-                st.write(
-                    "The captured Gmail message did not include the trusted Received "
-                    "header chain needed to reconstruct mail-server hops. NETRA will not "
-                    "invent an IP address or sender location."
-                )
-                st.caption(
-                    "To populate this section, analyze the original .eml message with full "
-                    "headers or use a trusted mail-provider/server-side ingestion source."
-                )
-            else:
-                st.subheader("Observed mail-server hops")
-                for index, hop in enumerate(hops, 1):
-                    st.markdown(f"**Hop {index}**  `{hop.get('source_hostname') or 'Unknown'}` -> `{hop.get('destination_hostname') or 'Unknown'}`")
-                    st.caption(f"IP: {hop.get('source_ip') or 'Unknown'} · classification: {', '.join(hop.get('ip_classifications', [])) or 'Unknown'} · timestamp: {hop.get('timestamp') or 'Unavailable'}")
-
-                st.subheader("Origin candidates")
-                if not candidates:
-                    st.info("No defensible public origin candidate was present in the observed hops.")
-                for candidate in candidates:
-                    st.write(f"`{candidate.get('ip')}` · confidence `{float(candidate.get('confidence', 0)):.0%}` · {', '.join(candidate.get('basis', []))}")
-            map_points = []
-            if len(candidates) > 8:
-                st.caption("Displaying location enrichment for the first eight origin candidates to keep lookup latency bounded.")
+            trace = trace or {}
+            candidates = trace.get("origin_candidates") or []
+            enriched = []
             for candidate in candidates[:8]:
+                candidate = dict(candidate)
                 ip = str(candidate.get("ip") or "")
-                if not ip:
-                    continue
                 intel = candidate.get("intelligence") or {}
-                intel_error = None
-                if not intel.get("available"):
-                    intel, intel_error = safe_call(client.ip_intelligence, ip)
-                if intel_error or not intel or not intel.get("available"):
-                    st.warning(f"Location unavailable for relay {ip}: " + (intel_error or (intel or {}).get("reason") or (intel or {}).get("source", "No usable provider data")))
-                    continue
-                st.caption("Location evidence source: " + str(intel.get("source", "Unknown")) + " | Looked up: " + str(intel.get("looked_up_at", "Unknown")))
-                st.caption(
-                    f"Registered network: {intel.get('city') or 'Unknown'}, "
-                    f"{intel.get('region') or intel.get('country') or 'Unknown'} | "
-                    f"ASN: {intel.get('asn') or 'Unknown'} | "
-                    f"Provider: {intel.get('organization') or intel.get('isp') or 'Unknown'}"
-                )
-                try:
-                    import math
-                    latitude = float(intel.get("latitude"))
-                    longitude = float(intel.get("longitude"))
-                    if math.isfinite(latitude) and math.isfinite(longitude) and -90 <= latitude <= 90 and -180 <= longitude <= 180:
-                        map_points.append({"lat": latitude, "lon": longitude, "ip": ip})
-                except (TypeError, ValueError):
-                    pass
-            if map_points:
-                st.subheader("Origin infrastructure map")
-                st.map(map_points, latitude="lat", longitude="lon", size=120)
-            if candidates and not map_points:
-                st.info("Relay IPs were found, but no valid coordinates were available. Network-owner details may still be shown above.")
-            if candidates:
-                st.info("Geolocation is infrastructure intelligence and does not prove the sender's physical location.")
-            if limitations:
-                with st.expander("Origin-trace limitations"):
-                    for limitation in limitations:
-                        st.write(f"- {limitation}")
+                if ip and not intel.get("available"):
+                    fresh, error = safe_call(client.ip_intelligence, ip)
+                    if not error and fresh:
+                        candidate["intelligence"] = fresh
+                    elif error:
+                        candidate["intelligence"] = {"available": False, "source": "dashboard_lookup_failed"}
+                enriched.append(candidate)
+            view_origin = explain_origin({**trace, "origin_candidates": enriched})
+            st.subheader(view_origin["title"])
+            st.write(view_origin["summary"])
+            st.info(view_origin["sender_location"])
+            st.write("**What you can do:** " + view_origin["next_step"])
+            points = []
+            for server in view_origin["servers"]:
+                with st.container(border=True):
+                    st.markdown("**Mail-server IP:** `" + server["ip"] + "`")
+                    st.write("**" + server["status"] + "**")
+                    st.write(server["explanation"])
+                    st.write(server["location"])
+                    st.write(server["network"])
+                    st.write(server["anonymization"])
+                    if server["coordinates"]:
+                        points.append(server["coordinates"])
+            if points:
+                st.subheader("Approximate locations of observed mail servers")
+                st.caption("Map markers describe infrastructure. They do not locate the person who sent the email.")
+                st.map(points, latitude="lat", longitude="lon", size=120)
+            if len(candidates) > 8:
+                st.caption("Showing the first eight server candidates to keep location lookups bounded.")
+            with st.expander("Delivery route and technical evidence for analysts"):
+                st.json(trace)
     with tabs[2]:
         graph, graph_error = safe_call(client.graph, email_id)
         if graph and not graph_error:
