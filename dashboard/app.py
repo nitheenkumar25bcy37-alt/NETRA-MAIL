@@ -203,13 +203,20 @@ def render_email(email_id: str):
                 for candidate in candidates:
                     st.write(f"`{candidate.get('ip')}` · confidence `{float(candidate.get('confidence', 0)):.0%}` · {', '.join(candidate.get('basis', []))}")
             map_points = []
-            for candidate in candidates:
+            if len(candidates) > 8:
+                st.caption("Displaying location enrichment for the first eight origin candidates to keep lookup latency bounded.")
+            for candidate in candidates[:8]:
                 ip = str(candidate.get("ip") or "")
                 if not ip:
                     continue
-                intel, intel_error = safe_call(client.ip_intelligence, ip)
+                intel = candidate.get("intelligence") or {}
+                intel_error = None
+                if not intel.get("available"):
+                    intel, intel_error = safe_call(client.ip_intelligence, ip)
                 if intel_error or not intel or not intel.get("available"):
+                    st.warning(f"Location unavailable for relay {ip}: " + (intel_error or (intel or {}).get("reason") or (intel or {}).get("source", "No usable provider data")))
                     continue
+                st.caption("Location evidence source: " + str(intel.get("source", "Unknown")) + " | Looked up: " + str(intel.get("looked_up_at", "Unknown")))
                 st.caption(
                     f"Registered network: {intel.get('city') or 'Unknown'}, "
                     f"{intel.get('region') or intel.get('country') or 'Unknown'} | "
@@ -217,15 +224,18 @@ def render_email(email_id: str):
                     f"Provider: {intel.get('organization') or intel.get('isp') or 'Unknown'}"
                 )
                 try:
+                    import math
                     latitude = float(intel.get("latitude"))
                     longitude = float(intel.get("longitude"))
-                    if latitude or longitude:
+                    if math.isfinite(latitude) and math.isfinite(longitude) and -90 <= latitude <= 90 and -180 <= longitude <= 180:
                         map_points.append({"lat": latitude, "lon": longitude, "ip": ip})
                 except (TypeError, ValueError):
                     pass
             if map_points:
                 st.subheader("Origin infrastructure map")
                 st.map(map_points, latitude="lat", longitude="lon", size=120)
+            if candidates and not map_points:
+                st.info("Relay IPs were found, but no valid coordinates were available. Network-owner details may still be shown above.")
             if candidates:
                 st.info("Geolocation is infrastructure intelligence and does not prove the sender's physical location.")
             if limitations:

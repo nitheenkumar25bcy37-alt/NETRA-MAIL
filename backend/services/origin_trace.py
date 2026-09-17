@@ -18,6 +18,7 @@ class OriginTraceService:
         hops = parsed.get("network_chain", []) or []
         candidates: List[Dict[str, Any]] = []
         findings: List[Dict[str, Any]] = []
+        lookups = {}
         for hop in reversed(hops):
             for ip, classification in zip(hop.get("extracted_ips", []), hop.get("ip_classifications", [])):
                 if classification != "public":
@@ -31,7 +32,9 @@ class OriginTraceService:
                 if hop.get("source_hostname"):
                     candidate["basis"].append("Source hostname preserved")
                 if ip_provider is not None:
-                    candidate["intelligence"] = ip_provider.lookup(ip)
+                    if ip not in lookups:
+                        lookups[ip] = ip_provider.lookup(ip) if len(lookups) < 4 else {"ip": ip, "available": False, "source": "lookup_budget", "reason": "Per-analysis lookup budget reached; use the dashboard to enrich this relay."}
+                    candidate["intelligence"] = lookups[ip]
                     intelligence = candidate["intelligence"]
                     if intelligence.get("cloud_provider") or intelligence.get("hosting_provider"):
                         findings.append({"finding_id": str(uuid4()), "category": "Infrastructure", "rule": "cloud_or_hosting_infrastructure", "severity": "low", "confidence": 0.7, "title": "Cloud or hosting infrastructure observed", "description": "The candidate IP is associated with hosting or cloud infrastructure.", "evidence": {"ip": ip, "cloud_provider": intelligence.get("cloud_provider"), "hosting_provider": intelligence.get("hosting_provider")}, "limitations": ["Cloud hosting is common for legitimate services and is not evidence of maliciousness by itself."]})

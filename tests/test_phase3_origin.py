@@ -133,3 +133,47 @@ class Phase3OriginTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_default_geo_provider_maps_network_owner_and_validates_coordinates(tmp_path, monkeypatch):
+    monkeypatch.delenv("NETRA_IP_INTEL_URL", raising=False)
+    response = Mock(status_code=200)
+    response.json.return_value = {"ip": "8.8.8.8", "success": True, "country": "United States", "city": "Example", "latitude": 0, "longitude": 0, "connection": {"asn": 15169, "org": "Google LLC", "isp": "Google LLC"}}
+    with patch("backend.intelligence.ip_provider.requests.get", return_value=response) as request:
+        provider = IPIntelligenceProvider(cache_dir=str(tmp_path))
+        result = provider.lookup("8.8.8.8")
+        assert result["available"] and result["location_available"]
+        assert result["organization"] == "Google LLC" and result["asn"] == 15169
+        assert result["vpn"] is None and result["source"] == "ipwho.is"
+        provider.lookup("8.8.8.8")
+        request.assert_called_once_with("https://ipwho.is/8.8.8.8", timeout=3.0, allow_redirects=False)
+
+
+def test_geo_service_failure_and_nonpublic_ips(tmp_path):
+    response = Mock(status_code=200)
+    response.json.return_value = {"success": False, "message": "Quota exceeded"}
+    with patch("backend.intelligence.ip_provider.requests.get", return_value=response) as request:
+        provider = IPIntelligenceProvider(endpoint="https://ipwho.is", cache_dir=str(tmp_path))
+        assert not provider.lookup("8.8.8.8")["available"]
+        assert not provider.lookup("192.168.1.2")["available"]
+        assert not provider.lookup("203.0.113.1")["available"]
+        assert request.call_count == 1
+
+
+def test_geo_invalid_coordinates_do_not_reach_map(tmp_path):
+    response = Mock(status_code=200)
+    response.json.return_value = {"country": "Example", "latitude": "nan", "longitude": 190}
+    with patch("backend.intelligence.ip_provider.requests.get", return_value=response):
+        result = IPIntelligenceProvider(endpoint="https://ipwho.is", cache_dir=str(tmp_path)).lookup("8.8.8.8")
+    assert result["available"] and not result["location_available"]
+    assert result["latitude"] is None and result["longitude"] is None
+
+
+def test_origin_lookup_budget_and_duplicate_caching():
+    from backend.services.origin_trace import OriginTraceService
+    provider = Mock()
+    provider.lookup.return_value = {"available": True}
+    hops = [{"extracted_ips": [f"8.8.8.{i}"], "ip_classifications": ["public"]} for i in [1, 2, 3, 4, 5, 5]]
+    result = OriginTraceService.build({"network_chain": hops}, provider)
+    assert provider.lookup.call_count == 4
+    assert any(c["intelligence"]["source"] == "lookup_budget" for c in result["origin_candidates"] if not c["intelligence"].get("available"))

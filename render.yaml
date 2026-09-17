@@ -38,6 +38,8 @@ services:
         value: /var/data/forensic_ledger.db
       - key: NETRA_EVIDENCE_STORAGE_DIR
         value: /var/data/evidence
+      - key: NETRA_IP_INTEL_URL
+        value: https://ipwho.is
       - key: NETRA_URL_REPUTATION_ENABLED
         value: "false"
 

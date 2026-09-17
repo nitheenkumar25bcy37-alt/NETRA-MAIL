@@ -17,7 +17,7 @@ class IPIntelligenceProvider:
     """Optional IP intelligence provider with safe unavailable behavior."""
 
     def __init__(self, endpoint: str | None = None, timeout: float | None = None, cache_dir: str | None = None):
-        self.endpoint = (endpoint or os.getenv("NETRA_IP_INTEL_URL", "")).strip()
+        self.endpoint = (endpoint if endpoint is not None else os.getenv("NETRA_IP_INTEL_URL", "https://ipwho.is")).strip()
         self.timeout = timeout or float(os.getenv("NETRA_INTEL_TIMEOUT_SECONDS", "3"))
         self.cache_dir = Path(cache_dir or os.getenv("NETRA_INTEL_CACHE_DIR", "data/intelligence_cache"))
         self.cache_dir = self.cache_dir / hashlib.sha256(self.endpoint.encode()).hexdigest()[:16]
@@ -78,6 +78,7 @@ class IPIntelligenceProvider:
         except Exception:
             cache_path = None
         if not self.endpoint:
+            result["reason"] = "IP lookup service disabled by configuration."
             self.cache[result["ip"]] = result
             return result
         try:
@@ -86,23 +87,44 @@ class IPIntelligenceProvider:
                 raise ValueError("Provider redirects are not permitted")
             if response.status_code == 429:
                 result["source"] = "provider_rate_limited"
+                result["reason"] = "IP lookup provider rate limit reached. Retry later or configure your own provider."
                 self.cache[result["ip"]] = result
                 return result
             response.raise_for_status()
             data = response.json()
             if not isinstance(data, dict):
                 raise ValueError("Provider response must be an object")
+            if data.get("success") is False:
+                raise ValueError(str(data.get("message") or "Provider could not locate this IP")[:200])
+            if data.get("ip") and ipaddress.ip_address(str(data["ip"])) != ipaddress.ip_address(result["ip"]):
+                raise ValueError("Provider returned a different IP")
+            connection = data.get("connection") or {}
+            if isinstance(connection, dict):
+                data = {**data, "asn": data.get("asn", connection.get("asn")), "isp": data.get("isp", connection.get("isp")), "organization": data.get("organization", connection.get("org"))}
             result.update({key: data.get(key) for key in ("country", "region", "city", "latitude", "longitude", "asn", "isp", "organization", "hosting_provider", "cloud_provider", "vpn", "proxy", "tor") if key in data})
+            for field, limit in (("latitude", 90), ("longitude", 180)):
+                value = result.get(field)
+                try:
+                    number = float(value)
+                    result[field] = number if not isinstance(value, bool) and math.isfinite(number) and abs(number) <= limit else None
+                except (ValueError, TypeError):
+                    result[field] = None
+            result["location_available"] = result.get("latitude") is not None and result.get("longitude") is not None
             for flag in ("vpn", "proxy", "tor"):
                 result[flag] = data.get(flag) if isinstance(data.get(flag), bool) else None
             result["available"] = any(result.get(key) is not None for key in ("country", "asn", "isp", "organization", "latitude"))
-            result["source"] = os.getenv("NETRA_IP_INTEL_SOURCE", "configured_provider")
+            result["source"] = os.getenv("NETRA_IP_INTEL_SOURCE", "ipwho.is" if self.endpoint.rstrip("/") == "https://ipwho.is" else "configured_provider")
             result["confidence"] = float(data.get("confidence", 0.5))
             result["confidence"] = max(0.0, min(1.0, result["confidence"])) if math.isfinite(result["confidence"]) else 0.0
             result["looked_up_at"] = datetime.now(timezone.utc).isoformat()
             if cache_path:
-                cache_path.write_text(json.dumps(result), encoding="utf-8")
+                try:
+                    cache_path.write_text(json.dumps(result), encoding="utf-8")
+                except OSError:
+                    pass
         except (requests.RequestException, TimeoutError, ValueError, TypeError):
+            result.update(available=False, location_available=False, latitude=None, longitude=None)
             result["source"] = "provider_unavailable"
+            result["reason"] = "The lookup provider could not return usable data (network, response or service error)."
         self.cache[result["ip"]] = result
         return result
