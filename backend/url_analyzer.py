@@ -1782,11 +1782,20 @@ class URLAnalyzer:
             result["visible_text"] = visible
             result["href"] = href
             result["visible_host"] = visible_host
-            result["visible_href_mismatch"] = bool(visible_host and visible_host != hostname)
+            from backend.domain_identity import compare_link_hosts
+            comparison = compare_link_hosts(visible_host, hostname)
+            result["link_host_comparison"] = comparison
+            result["visible_href_mismatch"] = comparison["deceptive_domain_mismatch"]
+            result["same_domain_host_difference"] = comparison["host_differs"] and comparison["same_registered_domain"]
             result["mixed_script"] = any(ord(char) > 127 for char in hostname) and "xn--" not in hostname
             results.append(result)
+            if result.get("same_domain_host_difference"):
+                findings.append({"finding_id": str(uuid4()), "category": "URL", "rule": "same_domain_link_host_difference", "severity": "info", "confidence": 0.94,
+                    "title": "Link uses another subdomain of the same registered domain",
+                    "description": "The displayed address and destination use different subdomains under the same registered domain. That difference alone is not evidence of phishing; the destination is still checked for other risks.",
+                    "evidence": {**comparison, "href": href}, "limitations": ["Shared registered domain does not guarantee safety; a subdomain or account may be compromised."]})
             if result.get("visible_href_mismatch"):
-                findings.append({"finding_id": str(uuid4()), "category": "URL", "rule": "visible_href_mismatch", "severity": "high", "confidence": 0.94, "title": "Visible link destination differs from href", "description": "The visible link text points to a different host than the actual href.", "evidence": {"visible_host": visible_host, "actual_host": hostname, "href": href}, "limitations": ["A mismatch can also be caused by intentionally shortened or redirected links."]})
+                findings.append({"finding_id": str(uuid4()), "category": "URL", "rule": "visible_href_mismatch", "severity": "high", "confidence": 0.94, "title": "Visible link destination differs from href", "description": "The displayed address and actual destination belong to different registered domains, or a shared domain could not be established.", "evidence": {**comparison, "href": href}, "limitations": ["A mismatch can also be caused by intentionally shortened or redirected links."]})
             rules = []
             if result.get("is_shortener"):
                 rules.append(("url_shortener", "medium", 0.88, "URL shortener detected", "The destination is obscured behind a known URL shortening service."))

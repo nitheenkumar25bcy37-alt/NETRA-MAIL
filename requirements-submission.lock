@@ -115,3 +115,5 @@ watchdog==6.0.0
 websockets==16.1.1
 xyzservices==2026.3.0
 yarl==1.24.5
+requests-file==3.0.1
+tldextract==5.3.2

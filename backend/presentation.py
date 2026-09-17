@@ -23,7 +23,11 @@ def explain_analysis(result):
     urls = []
     for item in url_data.get("urls", []) or []:
         risk = int(item.get("risk_score") or 0)
-        urls.append({"url": str(item.get("url") or item.get("href") or ""), "destination": str(item.get("redirect_target") or item.get("hostname") or item.get("registered_domain") or ""), "risk_score": risk, "assessment": "Suspicious characteristics found" if risk >= 35 else "No strong warning in this static URL check", "reasons": _list(item.get("risk_reasons")), "model": item.get("ml_analysis") or {}})
+        comparison = item.get("link_host_comparison") or {}
+        label_explanation = ""
+        if item.get("same_domain_host_difference"):
+            label_explanation = "The displayed address and destination use different subdomains of " + str(comparison.get("actual_registered_domain") or "the same registered domain") + ". This difference alone is not counted as phishing. Other destination checks still apply."
+        urls.append({"url": str(item.get("url") or item.get("href") or ""), "destination": str(item.get("redirect_target") or item.get("hostname") or item.get("registered_domain") or ""), "risk_score": risk, "assessment": "Suspicious characteristics found" if risk >= 35 else "No strong warning in this static URL check", "reasons": _list(item.get("risk_reasons")), "model": item.get("ml_analysis") or {}, "label_explanation": label_explanation})
     auth_labels = {"spf": ("Sending-server authorization", "Was the sending server authorized for the envelope domain?"), "dkim": ("Signed-message integrity", "Does the original signed message match the signing-domain key?"), "dmarc": ("Visible-sender alignment", "Does verified SPF or DKIM align with the visible From domain?"), "arc": ("Forwarding-chain verification", "Is the signed authentication handover chain valid?")}
     authentication = []
     auth = parsed.get("verified_authentication") or {}
@@ -67,6 +71,8 @@ def explanation_lines(view):
     lines.extend(["Link analysis:", view["url_analysis"]["summary"]])
     for url in view["url_analysis"]["urls"]:
         lines.extend([f"Link: {url['url']}", f"Destination: {url['destination'] or 'Not established'}", f"URL risk: {url['risk_score']}/100 - {url['assessment']}", *(url["reasons"] or ["No specific URL warnings reported; destination safety is not guaranteed."])])
+        if url.get("label_explanation"):
+            lines.append(url["label_explanation"])
         model = url["model"]
         if model.get("available"):
             lines.append(f"URL model: {model.get('classification', 'Prediction available')}; {'contributed with structural evidence' if model.get('used_in_score') else 'did not contribute to URL score'}.")

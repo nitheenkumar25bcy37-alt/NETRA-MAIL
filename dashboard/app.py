@@ -138,6 +138,8 @@ def render_email(email_id: str):
             with st.expander(f"Link {index}: {url['assessment']} | {url['risk_score']}/100", expanded=url["risk_score"] >= 35):
                 st.code(url["url"], language=None)
                 st.write("Destination: " + (url["destination"] or "Not established"))
+                if url.get("label_explanation"):
+                    st.write(url["label_explanation"])
                 for reason in url["reasons"]:
                     st.write("- " + reason)
                 if not url["reasons"]:
