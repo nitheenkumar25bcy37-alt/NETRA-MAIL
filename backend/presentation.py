@@ -28,6 +28,28 @@ def explain_analysis(result):
         if item.get("same_domain_host_difference"):
             label_explanation = "The displayed address and destination use different subdomains of " + str(comparison.get("actual_registered_domain") or "the same registered domain") + ". This difference alone is not counted as phishing. Other destination checks still apply."
         urls.append({"url": str(item.get("url") or item.get("href") or ""), "destination": str(item.get("redirect_target") or item.get("hostname") or item.get("registered_domain") or ""), "risk_score": risk, "assessment": "Suspicious characteristics found" if risk >= 35 else "No strong warning in this static URL check", "reasons": _list(item.get("risk_reasons")), "model": item.get("ml_analysis") or {}, "label_explanation": label_explanation})
+    attachment_data = parsed.get("attachment_analysis") or {}
+    attachments = []
+    for item in attachment_data.get("attachments", []) or []:
+        image = item.get("image_analysis") or {}
+        parsed_attachment = next((value for value in parsed.get("attachments", []) or []
+                                  if value.get("filename") == item.get("filename")), {})
+        parsed_image = parsed_attachment.get("image_analysis") or {}
+        skipped = bool(item.get("analysis_skipped"))
+        attachments.append({
+            "filename": str(item.get("filename") or "unnamed attachment"),
+            "content_type": str(item.get("content_type") or "unknown"),
+            "size_bytes": int(item.get("size_bytes") or 0),
+            "risk_score": int(item.get("score") or 0),
+            "risk_level": str(item.get("risk_level") or "UNKNOWN"),
+            "status": "Content inspection unavailable" if skipped else "Static content inspection completed",
+            "reasons": _list(item.get("reasons")),
+            "qr_payloads": _list(image.get("qr_payloads")),
+            "ocr_available": bool(image.get("ocr_available")),
+            "ocr_text_present": bool(image.get("ocr_text_present")),
+            "ocr_text_preview": str(parsed_image.get("ocr_text_preview") or ""),
+            "limitations": _list(image.get("limitations")),
+        })
     auth_labels = {"spf": ("Sending-server authorization", "Was the sending server authorized for the envelope domain?"), "dkim": ("Signed-message integrity", "Does the original signed message match the signing-domain key?"), "dmarc": ("Visible-sender alignment", "Does verified SPF or DKIM align with the visible From domain?"), "arc": ("Forwarding-chain verification", "Is the signed authentication handover chain valid?")}
     authentication = []
     auth = parsed.get("verified_authentication") or {}
@@ -47,6 +69,7 @@ def explain_analysis(result):
         "reasons": reasons,
         "text_analysis": {"language": str(nlp.get("language") or multi.get("language") or "Not established"), "signals": signals, "summary": "These words are contextual clues. Ordinary payment or login language does not prove phishing." if signals else "No matching language cues were reported." if nlp or multi else "Detailed text output is unavailable in this older record. Reanalyze to capture it."},
         "url_analysis": {"urls": urls, "summary": f"{len(urls)} link(s) inspected. Link risk is separate from the overall email score." if urls else "No links were extracted from the captured content." if url_data else "Detailed URL output is unavailable in this record; this does not prove that it contains no links."},
+        "attachment_analysis": {"attachments": attachments, "summary": f"{len(attachments)} attachment(s) identified." if attachments else "No MIME attachment was present in the original message received by NETRA."},
         "authentication": authentication, "model": parsed.get("ml_analysis") or {},
         "origin": explain_origin(parsed.get("origin_trace") or {}),
         "recommended_actions": ["Avoid email links for login or OTP submission.", "Verify payment or account changes through a known phone number or official website.", "Preserve the original message and request security review."] if concerning else ["Confirm the sender and expected context before acting.", "Visit the official website directly for sensitive actions.", "Provide the original .eml for full header and attachment checks."],
@@ -76,6 +99,16 @@ def explanation_lines(view):
         model = url["model"]
         if model.get("available"):
             lines.append(f"URL model: {model.get('classification', 'Prediction available')}; {'contributed with structural evidence' if model.get('used_in_score') else 'did not contribute to URL score'}.")
+    lines.extend(["Attachment, QR and OCR analysis:", view["attachment_analysis"]["summary"]])
+    for item in view["attachment_analysis"]["attachments"]:
+        lines.extend([f"Attachment: {item['filename']} ({item['content_type']}, {item['size_bytes']} bytes)",
+                      f"Inspection: {item['status']}",
+                      f"Static attachment risk: {item['risk_score']}/100 ({item['risk_level']})"])
+        lines.extend(item["reasons"] or ["No dangerous static file property was identified."])
+        lines.append("QR: " + ("Decoded target(s): " + ", ".join(item["qr_payloads"]) if item["qr_payloads"] else "No QR target was decoded."))
+        lines.append("OCR: " + ("Readable image text was extracted and included in text analysis." if item["ocr_text_present"] else "OCR ran but found no readable text." if item["ocr_available"] else "OCR was unavailable or this file type was not an image."))
+        if item.get("ocr_text_preview"):
+            lines.append("Redacted OCR preview: " + item["ocr_text_preview"])
     lines.append("Sender authentication:")
     for item in view["authentication"]:
         lines.extend([f"{item['name']} - {item['label']}: {item['status']}", item["meaning"], item["interpretation"]])

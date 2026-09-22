@@ -173,10 +173,10 @@ function findSenderElement(root) {
 // BODY
 // ============================================================
 
-function findBodyElement() {
+function findBodyElement(root = document) {
 
     const bodies =
-        document.querySelectorAll(
+        root.querySelectorAll(
             "div.a3s"
         );
 
@@ -202,10 +202,7 @@ function findBodyElement() {
             "";
 
 
-        if (
-            text.trim().length > 10 &&
-            isVisible(body)
-        ) {
+        if (isVisible(body)) {
 
             return body;
         }
@@ -247,18 +244,22 @@ function extractCurrentEmail() {
     const subjectEl =
         findSubjectElement();
 
-    const bodyEl =
-        findBodyElement();
-
-    // Keep sender and body within the same Gmail message in a conversation.
-    const messageRoot = bodyEl && bodyEl.closest(".adn");
+    // Gmail messages that contain only an attachment may have an empty body.
+    // Select the open message first; the backend then fetches its complete
+    // original MIME through Gmail OAuth, including every attachment.
+    const roots = Array.from(document.querySelectorAll(".adn"));
+    const messageRoot = roots.reverse().find(root =>
+        isVisible(root) && findSenderElement(root) &&
+        (root.matches("[data-legacy-message-id]") ||
+         root.querySelector("[data-legacy-message-id]"))
+    ) || null;
     const senderEl = messageRoot && findSenderElement(messageRoot);
+    const bodyEl = messageRoot && findBodyElement(messageRoot);
 
 
     if (
         !subjectEl ||
-        !senderEl ||
-        !bodyEl
+        !senderEl
     ) {
         return null;
     }
@@ -288,16 +289,15 @@ function extractCurrentEmail() {
 
     const body =
         (
-            bodyEl.innerText ||
-            bodyEl.textContent ||
+        (bodyEl && bodyEl.innerText) ||
+        (bodyEl && bodyEl.textContent) ||
             ""
         ).trim();
 
 
     if (
         !subject ||
-        !sender ||
-        !body
+        !sender
     ) {
         return null;
     }
@@ -434,7 +434,7 @@ async function scanCurrentEmail() {
 
 
     if (!email) {
-        throw new Error("Open a single Gmail email with a visible sender, subject, and body.");
+        throw new Error("Open a single Gmail email with a visible sender and subject.");
     }
 
 

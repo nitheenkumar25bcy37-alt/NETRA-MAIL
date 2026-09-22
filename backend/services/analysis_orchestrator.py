@@ -50,7 +50,7 @@ class AnalysisOrchestrator:
     - Language alone is never considered malicious.
     """
 
-    VERSION = "4.5.0"
+    VERSION = "4.5.1"
 
     def __init__(
         self,
@@ -928,6 +928,20 @@ class AnalysisOrchestrator:
         # 13. EMAIL ML AS CORROBORATED SUPPORTING EVIDENCE
         # ==============================================================
 
+        structural_warning = any(
+            str(getattr(item, "severity", item.get("severity", "info") if isinstance(item, dict) else "info")).lower()
+            in {"medium", "high", "critical"}
+            and str(getattr(item, "category", item.get("category", "") if isinstance(item, dict) else "")).lower()
+            in {"authentication", "url", "attachment", "sender identity", "bec"}
+            for item in findings
+        )
+        verified_dmarc = verified.get("dmarc", {})
+        trusted_transactional_context = (
+            (verified_dmarc.get("status") == "pass" or verified_dmarc.get("receiver_status") in {"pass", "bestguesspass"})
+            and not structural_warning
+        )
+        nlp["trusted_transactional_context"] = trusted_transactional_context
+
         try:
             ml_analysis = {"available": True, **LocalMLClassifier.predict(text)}
             probability = float(ml_analysis.get("phishing_probability", 0.0))
@@ -938,7 +952,7 @@ class AnalysisOrchestrator:
             ]
             ml_analysis["used_in_decision"] = False
             hard_structural = any(str(getattr(item, "severity", item.get("severity", "info") if isinstance(item, dict) else "info")).lower() in {"high", "critical"} for item in findings)
-            if ml_analysis.get("calibration_status") == "platt_scaling" and probability >= 0.60 and not hard_structural:
+            if ml_analysis.get("calibration_status") == "platt_scaling" and probability >= 0.60 and not hard_structural and not trusted_transactional_context:
                 findings.append(self._finding(
                     "Machine learning", "calibrated_ml_review", "medium", probability,
                     "Calibrated text model requests review",
@@ -947,6 +961,15 @@ class AnalysisOrchestrator:
                     ml_analysis.get("limitations", []),
                 ))
                 ml_analysis["used_in_decision"] = True
+            elif ml_analysis.get("calibration_status") == "platt_scaling" and probability >= 0.60 and not hard_structural:
+                findings.append(self._finding(
+                    "Machine learning", "calibrated_ml_observation", "low", probability,
+                    "Text model noticed attack-like wording",
+                    "The calibrated text model noticed wording seen in attacks, but its confidence is insufficient to change the verdict without technical evidence.",
+                    {"phishing_probability": round(probability, 4), "review_threshold": 0.60,
+                     "authenticated_transactional_context": trusted_transactional_context},
+                    ml_analysis.get("limitations", []),
+                ))
             if probability >= 0.55 and corroborating and not hard_structural and not ml_analysis["used_in_decision"]:
                 severity = "medium" if probability >= 0.75 and len(corroborating) >= 2 else "low"
                 findings.append(self._finding(
@@ -1115,6 +1138,7 @@ class AnalysisOrchestrator:
         sanitized = dict(
             parsed
         )
+        from backend.compliance import IndiaPrivacyPreserver
         sanitized.pop(
             "raw_bytes",
             None,
@@ -1125,8 +1149,8 @@ class AnalysisOrchestrator:
             if ocr_text:
                 image["ocr_text_sha256"] = hashlib.sha256(ocr_text.encode("utf-8")).hexdigest()
                 image["ocr_character_count"] = len(ocr_text)
+                image["ocr_text_preview"] = IndiaPrivacyPreserver.redact_text(ocr_text[:600])
         # Raw originals remain in evidence storage, not in routine API results.
-        from backend.compliance import IndiaPrivacyPreserver
         sanitized["body"] = IndiaPrivacyPreserver.redact_structure(sanitized.get("body") or {})
 
         # ==============================================================

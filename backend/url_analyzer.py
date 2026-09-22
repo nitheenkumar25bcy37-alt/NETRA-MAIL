@@ -1808,7 +1808,7 @@ class URLAnalyzer:
             if result.get("port_present") or parsed.port not in (None, 80, 443):
                 rules.append(("suspicious_port", "medium", 0.8, "URL uses a non-standard port", "The URL specifies a port outside the normal HTTP or HTTPS ports."))
             if result.get("risk_score", 0) >= 50:
-                rules.append(("suspicious_url_features", "high", 0.82, "Suspicious URL characteristics detected", "The URL contains multiple credential, brand, redirect, or infrastructure signals."))
+                rules.append(("suspicious_url_features", "high", 0.82, "Multiple URL characteristics need review", "The actionable URL combines structural warning characteristics. Background image, font and tracking-pixel resources are excluded from this check."))
             for rule, severity, confidence, title, description in rules:
                 findings.append({"finding_id": str(uuid4()), "category": "URL", "rule": rule, "severity": severity, "confidence": confidence, "title": title, "description": description, "evidence": {"url": href, "hostname": hostname, "registered_domain": result.get("registered_domain"), "risk_score": result.get("risk_score", 0), "risk_reasons": result.get("risk_reasons", [])[:10]}, "limitations": ["No DNS resolution or remote URL fetch was performed; redirect chains and live reputation are not inferred."]})
         return {"urls": results, "findings": findings, "highest_risk": max((item.get("risk_score", 0) for item in results), default=0), "redirect_chain": [], "network_fetch_performed": False}

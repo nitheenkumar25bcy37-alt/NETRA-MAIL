@@ -4,6 +4,7 @@ import json
 import os
 import re
 import subprocess
+import sys
 import tempfile
 import threading
 import time
@@ -12,6 +13,48 @@ import uuid
 _slots = threading.BoundedSemaphore(2)
 MAX_INPUT = 10 * 1024 * 1024
 MAX_OUTPUT = 2 * 1024 * 1024
+
+
+def _portable_attachment(task, timeout=35):
+    """Run static inspection out of process where Docker is unavailable."""
+    worker = os.path.join(os.path.dirname(__file__), "portable_inspection_worker.py")
+    encoded = json.dumps(task, ensure_ascii=True).encode()
+    if len(encoded) > 15 * 1024 * 1024:
+        return {"available": False, "error": "inspection_input_too_large"}
+    environment = {
+        key: value for key, value in os.environ.items()
+        if key.upper() in {"PATH", "SYSTEMROOT", "WINDIR", "TEMP", "TMP", "TMPDIR"}
+    }
+    environment["PYTHONNOUSERSITE"] = "1"
+    environment["PYTHONUTF8"] = "1"
+
+    def limits():
+        if os.name != "posix":
+            return
+        import resource
+        resource.setrlimit(resource.RLIMIT_CPU, (25, 25))
+        resource.setrlimit(resource.RLIMIT_FSIZE, (2 * 1024 * 1024, 2 * 1024 * 1024))
+        resource.setrlimit(resource.RLIMIT_NOFILE, (64, 64))
+        # ONNX Runtime needs more virtual address space than the raster itself.
+        resource.setrlimit(resource.RLIMIT_AS, (1536 * 1024 * 1024, 1536 * 1024 * 1024))
+
+    try:
+        completed = subprocess.run(
+            [sys.executable, "-I", worker], input=encoded,
+            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+            timeout=max(1, min(35, timeout)), check=False,
+            env=environment, cwd=os.path.dirname(worker),
+            preexec_fn=limits if os.name == "posix" else None,
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+        )
+        if completed.returncode != 0 or len(completed.stdout) > MAX_OUTPUT:
+            return {"available": False, "error": "portable_inspection_worker_unavailable"}
+        result = json.loads(completed.stdout)
+        if not isinstance(result, dict) or not isinstance(result.get("available"), bool):
+            return {"available": False, "error": "invalid_worker_response"}
+        return result
+    except (OSError, ValueError, subprocess.SubprocessError, json.JSONDecodeError):
+        return {"available": False, "error": "portable_inspection_worker_unavailable"}
 
 
 def inspect_task(task, timeout=35):
@@ -81,5 +124,8 @@ def inspect_task(task, timeout=35):
 def inspect_attachment(data, filename, content_type, timeout=35):
     if not isinstance(data, bytes) or len(data) > MAX_INPUT:
         return {"available": False, "error": "attachment_size_limit"}
-    return inspect_task({"operation": "attachment", "filename": str(filename)[:1024],
-        "content_type": str(content_type)[:200], "data": base64.b64encode(data).decode("ascii")}, timeout=timeout)
+    task = {"operation": "attachment", "filename": str(filename)[:1024],
+        "content_type": str(content_type)[:200], "data": base64.b64encode(data).decode("ascii")}
+    if os.getenv("NETRA_INSPECTION_MODE", "docker").strip().lower() == "portable":
+        return _portable_attachment(task, timeout=timeout)
+    return inspect_task(task, timeout=timeout)

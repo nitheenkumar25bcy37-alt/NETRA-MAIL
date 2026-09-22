@@ -174,7 +174,13 @@ class ForensicEmailParser:
         header_text = "\n".join(
             f"{key}: {value}" for key, value in header_items
         )
-        combined_for_urls = "\n".join([plain, html, header_text])
+        # Analyze destinations a person can act on: visible body URLs and
+        # anchor hrefs. Raw HTML also contains pixels, fonts, images and CSS
+        # resources; treating those background resources as clicked links
+        # creates false positives in legitimate newsletters and bank mail.
+        combined_for_urls = "\n".join(
+            [plain, html_details["visible_text"]]
+        )
         urls = self._extract_urls(combined_for_urls)
 
         # Add hrefs that are not present in visible/plain text, while keeping
@@ -192,7 +198,14 @@ class ForensicEmailParser:
             except Exception:
                 continue
 
-            if normalized not in urls and normalized != href:
+            # Absolute anchor destinations may not be repeated in visible
+            # text. Preserve them, while rejecting relative links resolved
+            # only against the parser's placeholder base.
+            if (
+                normalized not in urls
+                and "placeholder.invalid" not in normalized
+                and normalized.lower().startswith(("http://", "https://"))
+            ):
                 urls.append(normalized)
 
             if len(urls) >= self.MAX_URLS:

@@ -31,9 +31,13 @@ class RiskEngine:
 
         categories = (nlp or {}).get("categories", {})
         active = {key for key, values in categories.items() if values}
-        if len(active) >= 2:
+        # Lexical combinations remain useful for unauthenticated messages, but
+        # ordinary transactional nouns are only context when the sender is
+        # independently authenticated and no structural warning corroborates
+        # them.
+        if len(active) >= 2 and not (nlp or {}).get("trusted_transactional_context"):
             score += 10
-            contributions.append({"rule": "multi_signal_context", "points": 10, "reason": "Multiple independent social-engineering categories are present."})
+            contributions.append({"rule": "multi_signal_context", "points": 10, "reason": "Multiple social-engineering language categories are present."})
 
         score = min(100, round(score))
         # Explicit file-handling policy: executable and active-content delivery
@@ -53,6 +57,11 @@ class RiskEngine:
             if finding.get("rule") == "attachment_hash_blocklist" or finding.get("rule") == "attachment_static_critical":
                 score = max(score, 75)
                 escalations.append({"rule": "dangerous_attachment_escalation", "floor": 75, "reason": "Known blocked hash or executable/critical attachment requires high-risk handling.", "evidence_rule": finding["rule"]})
+        if seen_rules & {"visible_href_mismatch", "idn_or_mixed_script", "ssrf_internal_destination"}:
+            score = max(score, 50)
+            escalations.append({"rule": "direct_url_deception_escalation", "floor": 50,
+                                "reason": "A direct link-deception or unsafe-destination rule requires review.",
+                                "evidence_rules": sorted(seen_rules & {"visible_href_mismatch", "idn_or_mixed_script", "ssrf_internal_destination"})})
         contributions.extend(escalations)
         actionable = [f for f in findings if f.get("severity", "info").lower() != "info"]
         labels = {str(f.get("category", "")).lower() for f in actionable}

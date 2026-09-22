@@ -146,6 +146,33 @@ def render_email(email_id: str):
                     st.write("No specific URL warning reported. This does not guarantee the destination is safe.")
                 model = url["model"]
                 st.caption("URL model: " + (str(model.get("classification", "Prediction available")) if model.get("available") else "Unavailable") + "; " + ("contributed with structural evidence" if model.get("used_in_score") else "did not contribute to URL score"))
+        st.subheader("Attachment, QR and OCR analysis")
+        st.write(view["attachment_analysis"]["summary"])
+        for item in view["attachment_analysis"]["attachments"]:
+            with st.expander(f"{item['filename']} | {item['risk_level']} {item['risk_score']}/100", expanded=item["risk_score"] >= 35):
+                st.write(f"Type: {item['content_type']} | Size: {item['size_bytes']} bytes")
+                st.write("**" + item["status"] + "**")
+                for reason in item["reasons"]:
+                    st.write("- " + reason)
+                if not item["reasons"]:
+                    st.write("No dangerous static file property was identified.")
+                if item["qr_payloads"]:
+                    st.write("QR decoder found these target(s); NETRA also sends HTTP(S) targets through URL analysis:")
+                    for target in item["qr_payloads"]:
+                        st.code(target, language=None)
+                else:
+                    st.write("QR: no target was decoded.")
+                if item["ocr_text_present"]:
+                    st.write("OCR: readable image text was extracted and included in text analysis.")
+                    if item.get("ocr_text_preview"):
+                        st.write("Redacted OCR preview:")
+                        st.code(item["ocr_text_preview"], language=None)
+                elif item["ocr_available"]:
+                    st.write("OCR ran but found no readable text.")
+                else:
+                    st.write("OCR was unavailable or this attachment is not a supported raster image.")
+                for limitation in item["limitations"]:
+                    st.caption(limitation)
         st.subheader("Sender identity checks")
         if any(item["status"] == "unavailable" for item in view["authentication"]):
             st.info("Visible Gmail content lacks original signed bytes or trusted delivery results. Connect Gmail with Google consent, or upload its original message below.")

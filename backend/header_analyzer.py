@@ -32,7 +32,9 @@ class HeaderForensicAnalyzer:
         display_name = cls._display_name(meta.get("from", ""))
         display_brands = [brand for brand in cls.BRANDS if re.search(r"\b" + re.escape(brand) + r"\b", display_name.lower())]
         official = {"paypal": ["paypal.com"], "microsoft": ["microsoft.com", "outlook.com"], "google": ["google.com"], "apple": ["apple.com"], "amazon": ["amazon.com", "amazon.in"], "dhl": ["dhl.com"], "fedex": ["fedex.com"], "netflix": ["netflix.com"], "linkedin": ["linkedin.com"], "github": ["github.com"], "sbi": ["sbi.co.in", "sbi.bank"], "hdfc": ["hdfcbank.com"], "icici": ["icicibank.com"]}
-        if display_brands and not any(domains["from"] == domain or domains["from"].endswith("." + domain) for brand in display_brands for domain in official.get(brand, [])):
+        sender_labels = re.sub(r"[^a-z0-9]", "", domains["from"].split(".", 1)[0].lower())
+        brand_named_domain = any(re.sub(r"[^a-z0-9]", "", brand) in sender_labels for brand in display_brands)
+        if display_brands and not brand_named_domain and not any(domains["from"] == domain or domains["from"].endswith("." + domain) for brand in display_brands for domain in official.get(brand, [])):
             findings.append(cls._finding("display_name_impersonation", "high", 0.8, "Display name resembles a known brand", "The display name invokes a known brand while the sender domain does not align with that brand.", {"display_name": display_name, "from_domain": domains["from"]}, category="Sender identity"))
         from backend.domain_confusables import inspect_hostname
         homograph = inspect_hostname(domains["from"], cls.BRANDS)
