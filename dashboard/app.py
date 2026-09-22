@@ -9,6 +9,7 @@ import streamlit as st
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from dashboard.api_client import APIClient
+from backend.config import APP_VERSION
 from backend.presentation import explain_analysis, explain_origin
 
 
@@ -111,7 +112,13 @@ def render_email(email_id: str):
     confidence = float(result.get("confidence") or 0)
     c1.metric("Observation confidence", f"{confidence:.0%}" if confidence else "Not estimated")
     c2.metric("Evidence hash", str(result.get("evidence", {}).get("sha256", "Unavailable"))[:18] + "...")
-    c3.metric("Analysis version", result.get("evidence", {}).get("analysis_version", "Unknown"))
+    analysis_version = str(result.get("evidence", {}).get("analysis_version", "Unknown"))
+    c3.metric("Analysis version", analysis_version)
+    if analysis_version not in {"Unknown", APP_VERSION}:
+        st.warning(
+            f"This is a saved result from NETRA {analysis_version}. The current rules are {APP_VERSION}. "
+            "Analyze the email again to apply the latest false-positive and detection fixes."
+        )
     st.caption(view["confidence_note"])
     decision = result.get("parsed", {}).get("risk_decision", {})
     for escalation in decision.get("escalations", []):

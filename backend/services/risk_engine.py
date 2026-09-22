@@ -57,11 +57,16 @@ class RiskEngine:
             if finding.get("rule") == "attachment_hash_blocklist" or finding.get("rule") == "attachment_static_critical":
                 score = max(score, 75)
                 escalations.append({"rule": "dangerous_attachment_escalation", "floor": 75, "reason": "Known blocked hash or executable/critical attachment requires high-risk handling.", "evidence_rule": finding["rule"]})
-        if seen_rules & {"visible_href_mismatch", "idn_or_mixed_script", "ssrf_internal_destination"}:
+        direct_deception_rules = {
+            str(finding.get("rule", ""))
+            for finding in findings
+            if str(finding.get("severity", "info")).lower() in {"medium", "high", "critical"}
+        } & {"visible_href_mismatch", "idn_or_mixed_script", "ssrf_internal_destination"}
+        if direct_deception_rules:
             score = max(score, 50)
             escalations.append({"rule": "direct_url_deception_escalation", "floor": 50,
                                 "reason": "A direct link-deception or unsafe-destination rule requires review.",
-                                "evidence_rules": sorted(seen_rules & {"visible_href_mismatch", "idn_or_mixed_script", "ssrf_internal_destination"})})
+                                "evidence_rules": sorted(direct_deception_rules)})
         contributions.extend(escalations)
         actionable = [f for f in findings if f.get("severity", "info").lower() != "info"]
         labels = {str(f.get("category", "")).lower() for f in actionable}

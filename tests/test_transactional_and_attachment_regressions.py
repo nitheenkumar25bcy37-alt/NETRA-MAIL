@@ -54,6 +54,15 @@ def test_direct_link_deception_reaches_review_threshold():
     assert result["classification"] == "Phishing"
 
 
+def test_explained_first_party_redirect_does_not_trigger_deception_floor():
+    result = RiskEngine.evaluate([{
+        "category": "URL", "rule": "visible_href_mismatch", "severity": "info",
+        "confidence": 0.94, "title": "Authenticated first-party campaign redirect",
+    }])
+    assert result["risk_score"] == 0
+    assert result["classification"] == "Legitimate or low risk"
+
+
 def test_moderate_model_probability_does_not_force_transactional_review(monkeypatch):
     message = EmailMessage()
     message["Subject"] = "Kindly validate your email ID in our records"
@@ -150,3 +159,72 @@ def test_extension_accepts_attachment_only_open_message():
     source = open("extension/content.js", encoding="utf-8").read()
     assert "!sender ||\n        !body" not in source
     assert "visible sender and subject" in source
+
+
+def test_authenticated_sbi_campaign_links_do_not_become_phishing(monkeypatch):
+    message = EmailMessage()
+    message["Subject"] = "Your card, your rules: Customize your transaction limits on YONO SBI"
+    message["From"] = "SBI <sbi@communications.sbi.co.in>"
+    message["To"] = "customer@example.test"
+    message["Authentication-Results"] = (
+        "mx.google.com; spf=pass smtp.mailfrom=communications.sbi.co.in; "
+        "dmarc=pass header.from=communications.sbi.co.in"
+    )
+    message.set_content(
+        "Manage access for transactions. For help visit the SBI website. "
+        "SBI never asks for your password or OTP. Act immediately if your card is lost."
+    )
+    message.add_alternative(
+        '<p>Manage access for transactions. SBI never asks for your password or OTP. '
+        'Act immediately if your card is lost.</p>'
+        '<a href="https://deliveryalerts.sbi.co.in/campaign?id=123">https://play.google.com/store/apps/details?id=com.sbi.lotusintouch</a>'
+        '<a href="https://deliveryalerts.sbi.co.in/campaign?id=456">https://apps.apple.com/in/app/yono-sbi/id123</a>'
+        '<a href="https://onlinesbi.sbi.bank.in/">Online SBI</a>',
+        subtype="html",
+    )
+    monkeypatch.setattr("backend.services.analysis_orchestrator.LocalMLClassifier.predict", lambda text: {
+        "available": True, "calibration_status": "platt_scaling",
+        "phishing_probability": 0.81, "classification": "PHISHING", "limitations": [],
+    })
+    orchestrator = AnalysisOrchestrator()
+    orchestrator.domain_provider.inspect = lambda *args, **kwargs: {"findings": []}
+    with patch("backend.email_authentication.DKIMVerifier.verify", return_value={"status": "unsigned", "signatures": [], "limitations": []}), \
+         patch("backend.email_authentication.EmailAuthenticationVerifier._arc", return_value={"status": "none", "source": "test", "chain": []}):
+        result = orchestrator.analyze(message.as_bytes(), "eml", trusted_receiver="gmail")
+    assert result.risk_score < 35
+    assert result.classification == "Legitimate or low risk"
+    assert not any(
+        item.rule == "visible_href_mismatch" and item.severity != "info"
+        for item in result.findings
+    )
+    online_sbi = next(
+        item for item in result.parsed["url_analysis"]["urls"]
+        if item.get("hostname") == "onlinesbi.sbi.bank.in"
+    )
+    assert online_sbi["registered_domain"] == "sbi.bank.in"
+    assert "SBI" not in online_sbi["brand_impersonation"]
+
+
+def test_authenticated_sender_does_not_hide_unrelated_deceptive_domain(monkeypatch):
+    message = EmailMessage()
+    message["Subject"] = "SBI account notice"
+    message["From"] = "SBI <sbi@communications.sbi.co.in>"
+    message["Authentication-Results"] = (
+        "mx.google.com; spf=pass smtp.mailfrom=communications.sbi.co.in; "
+        "dmarc=pass header.from=communications.sbi.co.in"
+    )
+    message.set_content("Review your account.")
+    message.add_alternative(
+        '<a href="https://sbi-login.attacker.example/verify">https://onlinesbi.sbi.bank.in/</a>',
+        subtype="html",
+    )
+    orchestrator = AnalysisOrchestrator()
+    orchestrator.domain_provider.inspect = lambda *args, **kwargs: {"findings": []}
+    with patch("backend.email_authentication.DKIMVerifier.verify", return_value={"status": "unsigned", "signatures": [], "limitations": []}), \
+         patch("backend.email_authentication.EmailAuthenticationVerifier._arc", return_value={"status": "none", "source": "test", "chain": []}):
+        result = orchestrator.analyze(message.as_bytes(), "eml", trusted_receiver="gmail")
+    assert result.risk_score >= 50
+    assert any(
+        item.rule == "visible_href_mismatch" and item.severity == "high"
+        for item in result.findings
+    )

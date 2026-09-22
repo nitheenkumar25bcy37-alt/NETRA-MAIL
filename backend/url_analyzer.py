@@ -101,10 +101,11 @@ class URLAnalyzer:
         ],
         "SBI": [
             "sbi.co.in",
-            "onlinesbi.sbi",
+            "sbi.bank.in",
         ],
         "HDFC": [
             "hdfcbank.com",
+            "hdfcbank.bank.in",
         ],
         "ICICI": [
             "icicibank.com",
@@ -424,38 +425,8 @@ class URLAnalyzer:
 
     @classmethod
     def _base_domain(cls, hostname):
-
-        labels = [
-            x
-            for x in hostname.split(".")
-            if x
-        ]
-
-        if len(labels) < 2:
-            return hostname
-
-        # Common multi-part public suffixes.
-        if (
-            len(labels) >= 3
-            and labels[-2] in {
-                "co",
-                "com",
-                "net",
-                "org",
-                "gov",
-                "ac",
-                "edu",
-            }
-            and len(labels[-1]) in {2, 3}
-        ):
-
-            return ".".join(
-                labels[-3:]
-            )
-
-        return ".".join(
-            labels[-2:]
-        )
+        from backend.domain_identity import registered_identity
+        return registered_identity(hostname) or hostname
 
     # ============================================================
     # STATIC SSRF / INTERNAL DESTINATION CLASSIFICATION

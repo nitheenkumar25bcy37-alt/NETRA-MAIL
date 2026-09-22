@@ -50,7 +50,7 @@ class AnalysisOrchestrator:
     - Language alone is never considered malicious.
     """
 
-    VERSION = "4.5.1"
+    VERSION = "4.5.2"
 
     def __init__(
         self,
@@ -735,10 +735,40 @@ class AnalysisOrchestrator:
         parsed["url_analysis"] = url_result
 
         sender_domain = str(verified.get("dmarc", {}).get("from_domain", "")).lower().rstrip(".")
+        def belongs_to(host, root):
+            host = str(host or "").lower().rstrip(".")
+            root = str(root or "").lower().rstrip(".")
+            return bool(host and root and (host == root or host.endswith("." + root)))
+
+        def same_verified_organization(host):
+            """Relate authenticated senders to another published brand domain.
+
+            This is deliberately narrower than a whitelist: it only operates
+            after trusted DMARC passes and never suppresses hard destination or
+            reputation checks.  It handles organizations migrating between
+            domains, such as ``sbi.co.in`` and the controlled ``sbi.bank.in``.
+            """
+            if verified.get("dmarc", {}).get("status") != "pass":
+                return False
+            host = str(host or "").lower().rstrip(".")
+            for domains in URLAnalyzer.BRANDS.values():
+                sender_matches = any(belongs_to(sender_domain, domain) for domain in domains)
+                target_matches = any(belongs_to(host, domain) for domain in domains)
+                if sender_matches and target_matches:
+                    return True
+            return False
+
         def aligned_first_party(item):
-            registered = str(item.get("registered_domain", "")).lower().rstrip(".")
-            return verified.get("dmarc", {}).get("status") == "pass" and bool(registered) and (
-                sender_domain == registered or sender_domain.endswith("." + registered)
+            registered = str(
+                item.get("registered_domain")
+                or item.get("actual_registered_domain")
+                or ""
+            ).lower().rstrip(".")
+            actual_host = str(item.get("actual_host") or item.get("hostname") or "").lower().rstrip(".")
+            return verified.get("dmarc", {}).get("status") == "pass" and (
+                (bool(registered) and belongs_to(sender_domain, registered))
+                or same_verified_organization(actual_host)
+                or same_verified_organization(registered)
             )
         for item in url_result.get("findings", []):
             item = dict(item)

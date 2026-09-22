@@ -37,6 +37,14 @@ def test_unicode_and_punycode_equivalent_names_match():
     assert not result["urls"][0]["visible_href_mismatch"]
 
 
+def test_controlled_indian_banking_zone_preserves_bank_identity():
+    from backend.domain_identity import registered_identity
+    assert registered_identity("onlinesbi.sbi.bank.in") == "sbi.bank.in"
+    analyzed = URLAnalyzer.analyze_url("https://onlinesbi.sbi.bank.in/")
+    assert URLAnalyzer._base_domain(analyzed["hostname"]) == "sbi.bank.in"
+    assert "SBI" not in analyzed["brand_impersonation"]
+
+
 def test_same_domain_explanation_reaches_exported_report():
     from backend.presentation import explain_analysis,explanation_lines
     result=analyze("https://support.example.com","https://www.example.com/help")
