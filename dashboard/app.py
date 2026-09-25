@@ -145,6 +145,8 @@ def render_email(email_id: str):
         text = view["text_analysis"]
         st.write("Detected language: " + text["language"])
         st.write(text["summary"])
+        for note in text.get("context_notes", []):
+            st.write("Context considered: " + note)
         for signal in text["signals"]:
             st.write(signal["label"] + ": " + ", ".join(signal["cues"]))
         st.subheader("Link analysis")
@@ -167,12 +169,16 @@ def render_email(email_id: str):
         st.subheader("Attachment, QR and OCR analysis")
         st.write(view["attachment_analysis"]["summary"])
         for item in view["attachment_analysis"]["attachments"]:
-            with st.expander(f"{item['filename']} | {item['risk_level']} {item['risk_score']}/100", expanded=item["risk_score"] >= 35):
+            with st.expander(f"{item['filename']} | {item.get('assessment_label', item['status'])}", expanded=item["risk_score"] >= 35):
                 st.write(f"Type: {item['content_type']} | Size: {item['size_bytes']} bytes")
                 st.write("**" + item["status"] + "**")
+                if item.get("inspection_help"):
+                    st.info(item["inspection_help"])
+                if item.get("coverage") != "static" and item["risk_score"] >= 35:
+                    st.warning(f"File metadata still indicates risk: {item['risk_score']}/100. Missing content inspection does not remove these warnings.")
                 for reason in item["reasons"]:
                     st.write("- " + reason)
-                if not item["reasons"]:
+                if not item["reasons"] and item.get("coverage") == "static":
                     st.write("No dangerous static file property was identified.")
                 if item["qr_payloads"]:
                     st.write("QR decoder found these target(s); NETRA also sends HTTP(S) targets through URL analysis:")

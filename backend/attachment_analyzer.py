@@ -216,6 +216,12 @@ class AttachmentAnalyzer:
         if encrypted and severity == "LOW":
             severity = "MEDIUM"
 
+        is_pdf = content_type == "application/pdf" or ext == ".pdf"
+        encrypted_pdf = bool(is_pdf and re.search(rb"/Encrypt\b", data))
+        if is_pdf and data:
+            reasons.append("PDF static properties checked; PDF page content was not decoded or executed.")
+            if encrypted_pdf:
+                reasons.append("PDF encryption marker detected; protected content has not been decrypted or verified.")
         return {
             "filename": filename,
             "extension": ext,
@@ -230,6 +236,8 @@ class AttachmentAnalyzer:
             "entropy": round(entropy, 4),
             "archive": bool(archive_members or ext in cls.ARCHIVE_EXTENSIONS),
             "encrypted_archive": encrypted,
+            "encrypted_pdf_marker": encrypted_pdf,
+            "content_coverage": "unavailable" if item.get("analysis_skipped") else "limited" if is_pdf or encrypted else "static",
             "archive_members": archive_members,
             "embedded_urls": embedded_urls,
             "image_analysis": {"available": bool(image_analysis.get("available")), "qr_payloads": qr_payloads,

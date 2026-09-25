@@ -13,6 +13,9 @@ def explain_analysis(result):
     labels = {"urgency": "Pressure to act quickly", "credential_harvesting": "Login, password or OTP-related language", "financial_fraud": "Payment or money-related language", "social_engineering": "Authority, secrecy or manipulation language"}
     categories = nlp.get("categories") or multi.get("multilingual_findings") or {}
     signals = [{"label": labels.get(k, k.replace("_", " ")), "cues": _list(v)} for k, v in categories.items() if _list(v)]
+    context_notes = _list(nlp.get("contextual_observations"))
+    if any(f.get("rule", "").startswith("multilingual_") and f.get("severity") == "info" for f in findings):
+        context_notes.append("Multilingual terminology was observed, but no related sensitive request was established in the same passage. Those observations added no risk points.")
     if not signals:
         for f in findings:
             evidence = f.get("evidence") or {}
@@ -42,13 +45,18 @@ def explain_analysis(result):
                                   if value.get("filename") == item.get("filename")), {})
         parsed_image = parsed_attachment.get("image_analysis") or {}
         skipped = bool(item.get("analysis_skipped"))
+        limited = item.get("content_coverage") == "limited" or item.get("encrypted_archive") or item.get("content_type") == "application/pdf"
+        coverage = "unavailable" if skipped else "limited" if limited else "static"
         attachments.append({
             "filename": str(item.get("filename") or "unnamed attachment"),
             "content_type": str(item.get("content_type") or "unknown"),
             "size_bytes": int(item.get("size_bytes") or 0),
             "risk_score": int(item.get("score") or 0),
             "risk_level": str(item.get("risk_level") or "UNKNOWN"),
-            "status": "Content inspection unavailable" if skipped else "Static content inspection completed",
+            "status": "Content inspection unavailable" if skipped else "Limited static inspection; full content not verified" if limited else "Static content inspection completed",
+            "coverage": coverage,
+            "assessment_label": ("Not inspected" if skipped else "Limited inspection") if coverage != "static" else str(item.get("risk_level") or "UNKNOWN") + " " + str(int(item.get("score") or 0)) + "/100",
+            "inspection_help": "The attachment worker did not provide a result. Ask the service operator to check attachment inspection configuration and reanalyze the original message." if skipped else "NETRA has not fully decoded this document. Password-protected content remains unverified; password protection alone does not establish malware or safety." if limited else "",
             "reasons": _list(item.get("reasons")),
             "qr_payloads": _list(image.get("qr_payloads")),
             "ocr_available": bool(image.get("ocr_available")),
@@ -76,7 +84,7 @@ def explain_analysis(result):
         "summary": "NETRA found evidence that needs attention. Review the reasons before clicking links, sharing information or sending money." if concerning else "NETRA did not find enough strong evidence to classify this email as phishing in the information it received. This does not guarantee that the email is safe.",
         "confidence_note": "No finding-based confidence estimate is available. A displayed 0% does not mean 0% chance of phishing." if not result.get("confidence") else "Confidence describes the observations, not a calibrated probability that the email is safe or malicious.",
         "reasons": reasons,
-        "text_analysis": {"language": str(nlp.get("language") or multi.get("language") or "Not established"), "signals": signals, "summary": "These words are contextual clues. Ordinary payment or login language does not prove phishing." if signals else "No matching language cues were reported." if nlp or multi else "Detailed text output is unavailable in this older record. Reanalyze to capture it."},
+        "text_analysis": {"language": str(nlp.get("language") or multi.get("language") or "Not established"), "signals": signals, "context_notes": context_notes, "summary": "These words are contextual clues. Ordinary payment or login language does not prove phishing." if signals else "No matching language cues were reported." if nlp or multi else "Detailed text output is unavailable in this older record. Reanalyze to capture it."},
         "url_analysis": {"urls": urls, "summary": f"{len(urls)} link(s) inspected. Link risk is separate from the overall email score." if urls else "No links were extracted from the captured content." if url_data else "Detailed URL output is unavailable in this record; this does not prove that it contains no links."},
         "attachment_analysis": {"attachments": attachments, "summary": f"{len(attachments)} attachment(s) identified." if attachments else "No MIME attachment was present in the original message received by NETRA."},
         "authentication": authentication, "model": parsed.get("ml_analysis") or {},

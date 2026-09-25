@@ -50,7 +50,7 @@ class AnalysisOrchestrator:
     - Language alone is never considered malicious.
     """
 
-    VERSION = "4.5.4"
+    VERSION = "4.5.5"
 
     def __init__(
         self,
@@ -182,6 +182,7 @@ class AnalysisOrchestrator:
     def _build_multilingual_findings(
         self,
         multilingual: Dict[str, Any],
+        text: str = "",
     ) -> List[Finding]:
         """
         Convert multilingual detector results into normal V2 Finding
@@ -367,6 +368,19 @@ class AnalysisOrchestrator:
                 )
             )
 
+        from backend.services.financial_context import request_evidence
+        from backend.compliance import IndiaPrivacyPreserver
+        requests = request_evidence(text, categories)
+        for finding in findings:
+            required = 'financial_fraud' if finding.rule == 'multilingual_financial_fraud' else 'credential_harvesting'
+            matching = [r for r in requests if (r['categories'].get(required) if finding.rule != 'multilingual_contextual_social_engineering' else r['categories'].get('urgency'))]
+            if not matching:
+                finding.severity = 'info'
+                finding.title = 'Language observation without an established harmful request'
+                finding.description = 'Financial or credential terminology alone does not establish fraud. No related request was established in the same passage.'
+            else:
+                finding.evidence['matched_passages'] = [IndiaPrivacyPreserver.redact_text(r['passage']) for r in matching[:3]]
+            finding.limitations.append('Bounded passage rules are not a complete understanding of language or intent.')
         return findings
 
     # ------------------------------------------------------------------
@@ -493,7 +507,7 @@ class AnalysisOrchestrator:
 
         findings.extend(
             self._build_multilingual_findings(
-                multilingual
+                multilingual, lexical_text
             )
         )
 
@@ -545,8 +559,12 @@ class AnalysisOrchestrator:
                 if str(cue).lower() not in generic
             ]
         import re
-        sensitive_request = re.search(r"\b(?:send|submit|enter|provide|verify|confirm|transfer|wire|pay|remit|purchase|sign in|log in)\b[^.!?\n]{0,120}\b(?:password|otp|code|credentials|identity|account|funds|money|payment|gift cards?)\b", lexical_text, re.I)
-        if urgency and sensitive_request and (
+        from backend.services.financial_context import request_evidence
+        from backend.compliance import IndiaPrivacyPreserver
+        sensitive_requests = request_evidence(lexical_text, original_categories)
+        sensitive_request = bool(sensitive_requests)
+        pressured_requests = [r for r in sensitive_requests if r['categories'].get('urgency')]
+        if pressured_requests and (
             credentials
             or financial
             or social
@@ -564,6 +582,7 @@ class AnalysisOrchestrator:
                     ),
                     {
                         "urgency": urgency[:5],
+                        "matched_passages": [IndiaPrivacyPreserver.redact_text(r['passage']) for r in pressured_requests[:3]],
                         "related_categories": [
                             key
                             for key, value in (

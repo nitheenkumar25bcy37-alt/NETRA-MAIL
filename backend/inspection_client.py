@@ -126,6 +126,17 @@ def inspect_attachment(data, filename, content_type, timeout=35):
         return {"available": False, "error": "attachment_size_limit"}
     task = {"operation": "attachment", "filename": str(filename)[:1024],
         "content_type": str(content_type)[:200], "data": base64.b64encode(data).decode("ascii")}
-    if os.getenv("NETRA_INSPECTION_MODE", "docker").strip().lower() == "portable":
-        return _portable_attachment(task, timeout=timeout)
+    # Native hosted runtimes do not supply a Docker daemon. An explicit mode
+    # still wins; never silently fall back after a configured Docker failure.
+    default_mode = "portable" if os.getenv("NETRA_DEPLOYMENT_MODE", "").lower() == "hosted" else "docker"
+    mode = os.getenv("NETRA_INSPECTION_MODE", default_mode).strip().lower()
+    if mode == "portable":
+        if not _slots.acquire(blocking=False):
+            return {"available": False, "error": "inspection_capacity_exceeded"}
+        try:
+            return _portable_attachment(task, timeout=timeout)
+        finally:
+            _slots.release()
+    if mode != "docker":
+        return {"available": False, "error": "invalid_inspection_mode"}
     return inspect_task(task, timeout=timeout)

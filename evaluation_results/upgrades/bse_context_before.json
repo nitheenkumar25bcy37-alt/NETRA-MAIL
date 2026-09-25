@@ -1,0 +1,93 @@
+{
+  "scope": "Synthetic bilingual/context regressions; not independent production accuracy.",
+  "version": "4.5.4",
+  "criterion": "score >=25 or non-low-risk classification",
+  "network": "disabled; trusted receiver simulated",
+  "tp": 4,
+  "fp": 3,
+  "positive_count": 4,
+  "negative_count": 4,
+  "rows": [
+    {
+      "name": "bse-style",
+      "malicious": false,
+      "detected": true,
+      "score": 54,
+      "rules": [
+        "multilingual_financial_fraud",
+        "multilingual_credential_harvesting",
+        "contextual_social_engineering"
+      ]
+    },
+    {
+      "name": "hindi-advice",
+      "malicious": false,
+      "detected": true,
+      "score": 31,
+      "rules": [
+        "multilingual_financial_fraud",
+        "multilingual_credential_harvesting",
+        "corroborated_email_ml"
+      ]
+    },
+    {
+      "name": "separate-news",
+      "malicious": false,
+      "detected": true,
+      "score": 30,
+      "rules": [
+        "multilingual_financial_fraud",
+        "urgency_only",
+        "calibrated_ml_observation",
+        "corroborated_email_ml"
+      ]
+    },
+    {
+      "name": "english-advice",
+      "malicious": false,
+      "detected": false,
+      "score": 11,
+      "rules": [
+        "urgency_only",
+        "calibrated_ml_observation"
+      ]
+    },
+    {
+      "name": "english-attack",
+      "malicious": true,
+      "detected": true,
+      "score": 27,
+      "rules": [
+        "contextual_social_engineering"
+      ]
+    },
+    {
+      "name": "hindi-attack",
+      "malicious": true,
+      "detected": true,
+      "score": 27,
+      "rules": [
+        "multilingual_contextual_social_engineering"
+      ]
+    },
+    {
+      "name": "bilingual-attack",
+      "malicious": true,
+      "detected": true,
+      "score": 41,
+      "rules": [
+        "multilingual_credential_harvesting",
+        "contextual_social_engineering"
+      ]
+    },
+    {
+      "name": "advice-plus-attack",
+      "malicious": true,
+      "detected": true,
+      "score": 27,
+      "rules": [
+        "contextual_social_engineering"
+      ]
+    }
+  ]
+}
