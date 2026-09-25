@@ -19,6 +19,9 @@ def main():
     parser.add_argument("--expand-urls", action="store_true", help="Allow the isolated worker to contact public URL destinations")
     args = parser.parse_args()
     env = dict(os.environ)
+    ipstack_key = ROOT / ".local-secrets" / "ipstack-key"
+    if not env.get("NETRA_IPSTACK_API_KEY") and ipstack_key.is_file():
+        env["NETRA_IPSTACK_API_KEY"] = ipstack_key.read_text(encoding="utf-8-sig").strip()
     root = ROOT
     if not env.get("NETRA_EXTENSION_ID"):
         extension_id = detect_unpacked_extension_id(root)

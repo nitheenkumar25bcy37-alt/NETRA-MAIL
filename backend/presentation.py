@@ -160,6 +160,7 @@ def explain_origin(trace):
             explanation = {
                 "unconfigured": "Location lookups are turned off or not configured for this deployment.",
                 "provider_rate_limited": "The location service has reached its request limit. Try again later.",
+                "provider_configuration_error": intel.get("reason") or "The location provider needs a valid API key or a supported account plan.",
                 "provider_unavailable": "The location service could not return usable information. This does not mean the public IP is missing.",
                 "lookup_budget": "This server was not looked up because the analysis reached its lookup limit.",
                 "offline": "External location lookups were disabled for this offline analysis.",
@@ -180,12 +181,17 @@ def explain_origin(trace):
         if not reported and all(intel.get(flag) is False for flag in ("vpn", "proxy", "tor")):
             anonymization = "The provider did not flag this server as VPN, proxy or Tor infrastructure. This does not rule out a hidden VPN on the user's connection."
         servers.append({"ip": ip, "status": status, "explanation": explanation,
+                        "role": candidate.get("role") or "Observed public mail relay; original sender not established",
+                        "evidence": "; ".join(candidate.get("basis") or []),
+                        "provider": intel.get("provider") or intel.get("source") or "Not available",
+                        "looked_up_at": intel.get("looked_up_at") or "Not available",
+                        "asn": intel.get("asn"), "plan_note": intel.get("plan_note") or "",
                         "location": "Approximate server location: " + (", ".join(location_parts) or "Not established"),
                         "network": "Network operator: " + (owner or "Not established"),
                         "anonymization": anonymization, "coordinates": coordinates})
     if servers:
         title = "Public mail-server IPs found"
-        summary = "NETRA keeps observed public IPs even when they belong to Gmail, a cloud service or a VPN. NETRA starts with the oldest visible public hop; incomplete or forged headers can mislead the trace. These are clues about email delivery, not proof of the sender's identity."
+        summary = "NETRA keeps observed public IPs even when they belong to Gmail, a cloud service or a VPN. A delivery IP reported by Gmail is shown first when available, followed by observed relay addresses. Older headers can be incomplete or forged. These are clues about email delivery, not proof of the sender's identity."
         next_step = "Compare this route with sender identity checks and the email's text, links and attachments. An unfamiliar country alone does not make an email phishing."
     elif hops:
         title = "No public mail-server IP found in the captured headers"

@@ -40,6 +40,8 @@ services:
         value: /var/data/evidence
       - key: NETRA_IP_INTEL_URL
         value: https://ipwho.is
+      - key: NETRA_IPSTACK_API_KEY
+        sync: false
       - key: NETRA_URL_REPUTATION_ENABLED
         value: "false"
       - key: NETRA_INSPECTION_MODE

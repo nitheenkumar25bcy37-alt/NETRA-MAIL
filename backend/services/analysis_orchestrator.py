@@ -50,7 +50,7 @@ class AnalysisOrchestrator:
     - Language alone is never considered malicious.
     """
 
-    VERSION = "4.5.2"
+    VERSION = "4.5.3"
 
     def __init__(
         self,

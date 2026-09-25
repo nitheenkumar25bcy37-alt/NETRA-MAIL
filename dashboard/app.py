@@ -242,10 +242,17 @@ def render_email(email_id: str):
             for server in view_origin["servers"]:
                 with st.container(border=True):
                     st.markdown("**Mail-server IP:** `" + server["ip"] + "`")
+                    st.caption(server["role"])
                     st.write("**" + server["status"] + "**")
                     st.write(server["explanation"])
                     st.write(server["location"])
                     st.write(server["network"])
+                    if server["asn"]:
+                        st.write("Network number (ASN): " + str(server["asn"]))
+                    st.caption("Evidence: " + server["evidence"])
+                    st.caption("Location provider: " + server["provider"] + " | Lookup time: " + server["looked_up_at"])
+                    if server["plan_note"]:
+                        st.info(server["plan_note"])
                     st.write(server["anonymization"])
                     if server["coordinates"]:
                         points.append(server["coordinates"])
