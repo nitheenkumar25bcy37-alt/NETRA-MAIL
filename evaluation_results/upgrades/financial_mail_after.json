@@ -1,0 +1,543 @@
+{
+  "scope": "Synthetic regression matrix, not a production accuracy estimate.\n\nReceiver authentication and DNS are deterministic test doubles. ML, parsing,\nURL analysis and composite scoring use the real pipeline. No links are opened.\nRun as: python -m evaluation.financial_mail_regression --output PATH\n",
+  "version": "4.5.4",
+  "count": 20,
+  "tp": 8,
+  "fp": 0,
+  "recall": 1.0,
+  "false_positive_rate": 0.0,
+  "rows": [
+    {
+      "name": "sbi.co.in-credited",
+      "malicious": false,
+      "detected": false,
+      "score": 6,
+      "classification": "Legitimate or low risk",
+      "rules": [
+        {
+          "rule": "from_return_path_mismatch",
+          "severity": "info"
+        },
+        {
+          "rule": "spf_misalignment",
+          "severity": "info"
+        },
+        {
+          "rule": "calibrated_ml_observation",
+          "severity": "low"
+        }
+      ]
+    },
+    {
+      "name": "sbi.co.in-debited",
+      "malicious": false,
+      "detected": false,
+      "score": 6,
+      "classification": "Legitimate or low risk",
+      "rules": [
+        {
+          "rule": "from_return_path_mismatch",
+          "severity": "info"
+        },
+        {
+          "rule": "spf_misalignment",
+          "severity": "info"
+        },
+        {
+          "rule": "calibrated_ml_observation",
+          "severity": "low"
+        }
+      ]
+    },
+    {
+      "name": "hdfcbank.bank.in-credited",
+      "malicious": false,
+      "detected": false,
+      "score": 6,
+      "classification": "Legitimate or low risk",
+      "rules": [
+        {
+          "rule": "from_return_path_mismatch",
+          "severity": "info"
+        },
+        {
+          "rule": "spf_misalignment",
+          "severity": "info"
+        },
+        {
+          "rule": "calibrated_ml_observation",
+          "severity": "low"
+        }
+      ]
+    },
+    {
+      "name": "hdfcbank.bank.in-debited",
+      "malicious": false,
+      "detected": false,
+      "score": 6,
+      "classification": "Legitimate or low risk",
+      "rules": [
+        {
+          "rule": "from_return_path_mismatch",
+          "severity": "info"
+        },
+        {
+          "rule": "spf_misalignment",
+          "severity": "info"
+        },
+        {
+          "rule": "calibrated_ml_observation",
+          "severity": "low"
+        }
+      ]
+    },
+    {
+      "name": "icicibank.com-credited",
+      "malicious": false,
+      "detected": false,
+      "score": 6,
+      "classification": "Legitimate or low risk",
+      "rules": [
+        {
+          "rule": "from_return_path_mismatch",
+          "severity": "info"
+        },
+        {
+          "rule": "spf_misalignment",
+          "severity": "info"
+        },
+        {
+          "rule": "calibrated_ml_observation",
+          "severity": "low"
+        }
+      ]
+    },
+    {
+      "name": "icicibank.com-debited",
+      "malicious": false,
+      "detected": false,
+      "score": 6,
+      "classification": "Legitimate or low risk",
+      "rules": [
+        {
+          "rule": "from_return_path_mismatch",
+          "severity": "info"
+        },
+        {
+          "rule": "spf_misalignment",
+          "severity": "info"
+        },
+        {
+          "rule": "calibrated_ml_observation",
+          "severity": "low"
+        }
+      ]
+    },
+    {
+      "name": "axisbank.com-credited",
+      "malicious": false,
+      "detected": false,
+      "score": 6,
+      "classification": "Legitimate or low risk",
+      "rules": [
+        {
+          "rule": "from_return_path_mismatch",
+          "severity": "info"
+        },
+        {
+          "rule": "spf_misalignment",
+          "severity": "info"
+        },
+        {
+          "rule": "calibrated_ml_observation",
+          "severity": "low"
+        }
+      ]
+    },
+    {
+      "name": "axisbank.com-debited",
+      "malicious": false,
+      "detected": false,
+      "score": 6,
+      "classification": "Legitimate or low risk",
+      "rules": [
+        {
+          "rule": "from_return_path_mismatch",
+          "severity": "info"
+        },
+        {
+          "rule": "spf_misalignment",
+          "severity": "info"
+        },
+        {
+          "rule": "calibrated_ml_observation",
+          "severity": "low"
+        }
+      ]
+    },
+    {
+      "name": "example-bank.test-credited",
+      "malicious": false,
+      "detected": false,
+      "score": 6,
+      "classification": "Legitimate or low risk",
+      "rules": [
+        {
+          "rule": "from_return_path_mismatch",
+          "severity": "info"
+        },
+        {
+          "rule": "spf_misalignment",
+          "severity": "info"
+        },
+        {
+          "rule": "calibrated_ml_observation",
+          "severity": "low"
+        }
+      ]
+    },
+    {
+      "name": "example-bank.test-debited",
+      "malicious": false,
+      "detected": false,
+      "score": 6,
+      "classification": "Legitimate or low risk",
+      "rules": [
+        {
+          "rule": "from_return_path_mismatch",
+          "severity": "info"
+        },
+        {
+          "rule": "spf_misalignment",
+          "severity": "info"
+        },
+        {
+          "rule": "calibrated_ml_observation",
+          "severity": "low"
+        }
+      ]
+    },
+    {
+      "name": "newsletter",
+      "malicious": false,
+      "detected": false,
+      "score": 0,
+      "classification": "Legitimate or low risk",
+      "rules": [
+        {
+          "rule": "from_return_path_mismatch",
+          "severity": "info"
+        },
+        {
+          "rule": "spf_misalignment",
+          "severity": "info"
+        }
+      ]
+    },
+    {
+      "name": "protected-statement",
+      "malicious": false,
+      "detected": false,
+      "score": 0,
+      "classification": "Legitimate or low risk",
+      "rules": [
+        {
+          "rule": "from_return_path_mismatch",
+          "severity": "info"
+        },
+        {
+          "rule": "spf_misalignment",
+          "severity": "info"
+        }
+      ]
+    },
+    {
+      "name": "attack-0-False",
+      "malicious": true,
+      "detected": true,
+      "score": 100,
+      "classification": "Credential phishing",
+      "rules": [
+        {
+          "rule": "contextual_social_engineering",
+          "severity": "high"
+        },
+        {
+          "rule": "from_return_path_mismatch",
+          "severity": "info"
+        },
+        {
+          "rule": "spf_misalignment",
+          "severity": "info"
+        },
+        {
+          "rule": "visible_href_mismatch",
+          "severity": "high"
+        },
+        {
+          "rule": "suspicious_url_features",
+          "severity": "high"
+        },
+        {
+          "rule": "credential_request_with_suspicious_link",
+          "severity": "high"
+        }
+      ]
+    },
+    {
+      "name": "attack-0-True",
+      "malicious": true,
+      "detected": true,
+      "score": 100,
+      "classification": "Credential phishing",
+      "rules": [
+        {
+          "rule": "contextual_social_engineering",
+          "severity": "high"
+        },
+        {
+          "rule": "from_return_path_mismatch",
+          "severity": "info"
+        },
+        {
+          "rule": "spf_misalignment",
+          "severity": "info"
+        },
+        {
+          "rule": "visible_href_mismatch",
+          "severity": "high"
+        },
+        {
+          "rule": "suspicious_url_features",
+          "severity": "high"
+        },
+        {
+          "rule": "credential_request_with_suspicious_link",
+          "severity": "high"
+        }
+      ]
+    },
+    {
+      "name": "attack-1-False",
+      "malicious": true,
+      "detected": true,
+      "score": 100,
+      "classification": "Credential phishing",
+      "rules": [
+        {
+          "rule": "contextual_social_engineering",
+          "severity": "high"
+        },
+        {
+          "rule": "from_return_path_mismatch",
+          "severity": "info"
+        },
+        {
+          "rule": "spf_misalignment",
+          "severity": "info"
+        },
+        {
+          "rule": "visible_href_mismatch",
+          "severity": "high"
+        },
+        {
+          "rule": "ip_based_url",
+          "severity": "medium"
+        },
+        {
+          "rule": "ssrf_internal_destination",
+          "severity": "high"
+        },
+        {
+          "rule": "suspicious_url_features",
+          "severity": "high"
+        },
+        {
+          "rule": "credential_request_with_suspicious_link",
+          "severity": "high"
+        }
+      ]
+    },
+    {
+      "name": "attack-1-True",
+      "malicious": true,
+      "detected": true,
+      "score": 100,
+      "classification": "Credential phishing",
+      "rules": [
+        {
+          "rule": "contextual_social_engineering",
+          "severity": "high"
+        },
+        {
+          "rule": "from_return_path_mismatch",
+          "severity": "info"
+        },
+        {
+          "rule": "spf_misalignment",
+          "severity": "info"
+        },
+        {
+          "rule": "visible_href_mismatch",
+          "severity": "high"
+        },
+        {
+          "rule": "ip_based_url",
+          "severity": "medium"
+        },
+        {
+          "rule": "ssrf_internal_destination",
+          "severity": "high"
+        },
+        {
+          "rule": "suspicious_url_features",
+          "severity": "high"
+        },
+        {
+          "rule": "credential_request_with_suspicious_link",
+          "severity": "high"
+        }
+      ]
+    },
+    {
+      "name": "attack-2-False",
+      "malicious": true,
+      "detected": true,
+      "score": 100,
+      "classification": "Credential phishing",
+      "rules": [
+        {
+          "rule": "contextual_social_engineering",
+          "severity": "high"
+        },
+        {
+          "rule": "from_return_path_mismatch",
+          "severity": "info"
+        },
+        {
+          "rule": "spf_misalignment",
+          "severity": "info"
+        },
+        {
+          "rule": "visible_href_mismatch",
+          "severity": "high"
+        },
+        {
+          "rule": "suspicious_url_features",
+          "severity": "high"
+        },
+        {
+          "rule": "credential_request_with_suspicious_link",
+          "severity": "high"
+        }
+      ]
+    },
+    {
+      "name": "attack-2-True",
+      "malicious": true,
+      "detected": true,
+      "score": 100,
+      "classification": "Credential phishing",
+      "rules": [
+        {
+          "rule": "contextual_social_engineering",
+          "severity": "high"
+        },
+        {
+          "rule": "from_return_path_mismatch",
+          "severity": "info"
+        },
+        {
+          "rule": "spf_misalignment",
+          "severity": "info"
+        },
+        {
+          "rule": "visible_href_mismatch",
+          "severity": "high"
+        },
+        {
+          "rule": "suspicious_url_features",
+          "severity": "high"
+        },
+        {
+          "rule": "credential_request_with_suspicious_link",
+          "severity": "high"
+        }
+      ]
+    },
+    {
+      "name": "attack-3-False",
+      "malicious": true,
+      "detected": true,
+      "score": 100,
+      "classification": "Credential phishing",
+      "rules": [
+        {
+          "rule": "contextual_social_engineering",
+          "severity": "high"
+        },
+        {
+          "rule": "from_return_path_mismatch",
+          "severity": "info"
+        },
+        {
+          "rule": "spf_misalignment",
+          "severity": "info"
+        },
+        {
+          "rule": "visible_href_mismatch",
+          "severity": "high"
+        },
+        {
+          "rule": "idn_or_mixed_script",
+          "severity": "high"
+        },
+        {
+          "rule": "suspicious_url_features",
+          "severity": "high"
+        },
+        {
+          "rule": "credential_request_with_suspicious_link",
+          "severity": "high"
+        }
+      ]
+    },
+    {
+      "name": "attack-3-True",
+      "malicious": true,
+      "detected": true,
+      "score": 100,
+      "classification": "Credential phishing",
+      "rules": [
+        {
+          "rule": "contextual_social_engineering",
+          "severity": "high"
+        },
+        {
+          "rule": "from_return_path_mismatch",
+          "severity": "info"
+        },
+        {
+          "rule": "spf_misalignment",
+          "severity": "info"
+        },
+        {
+          "rule": "visible_href_mismatch",
+          "severity": "high"
+        },
+        {
+          "rule": "idn_or_mixed_script",
+          "severity": "high"
+        },
+        {
+          "rule": "suspicious_url_features",
+          "severity": "high"
+        },
+        {
+          "rule": "credential_request_with_suspicious_link",
+          "severity": "high"
+        }
+      ]
+    }
+  ]
+}

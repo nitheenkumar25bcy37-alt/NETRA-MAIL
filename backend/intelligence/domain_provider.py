@@ -97,7 +97,7 @@ class DomainIntelligenceProvider:
             observed = {str(value) for value in result["resolved_ips"]}
             unrelated = [value for value in related_ips if value and value not in observed]
             if observed and unrelated:
-                result["findings"].append({"category": "Infrastructure", "rule": "ip_domain_inconsistency", "severity": "low", "confidence": 0.7, "title": "Observed infrastructure is not in the domain DNS set", "description": "A relay IP does not match the currently observed A/AAAA records for this domain.", "evidence": {"domain_ips": sorted(observed), "observed_ips": unrelated}, "limitations": ["Mail providers, proxies, CDNs, and changing DNS can make this relationship legitimate."]})
+                result["findings"].append({"category": "Infrastructure", "rule": "ip_domain_inconsistency", "severity": "info", "confidence": 0.7, "title": "Mail delivery and website use different infrastructure", "description": "Mail servers and website servers often have different IP addresses. This comparison does not establish a threat and adds no risk points.", "evidence": {"domain_ips": sorted(observed), "observed_ips": unrelated}, "limitations": ["Mail providers, proxies, CDNs, and changing DNS can make this relationship legitimate."]})
         if len(self.cache) >= 1024:
             self.cache.clear()
             self.cache_times.clear()

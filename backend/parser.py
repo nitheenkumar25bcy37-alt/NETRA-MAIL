@@ -24,6 +24,7 @@ class _SafeHTMLExtractor(HTMLParser):
         self.forms: List[Dict[str, Any]] = []
         self.hidden_elements: List[Dict[str, str]] = []
         self.links: List[Dict[str, str]] = []
+        self._active_link: Dict[str, str] | None = None
         self.inline_images: List[Dict[str, str]] = []
         self._form: Dict[str, Any] | None = None
         self._form_text: List[str] = []
@@ -65,8 +66,11 @@ class _SafeHTMLExtractor(HTMLParser):
                 }
             )
 
-        if tag == "a" and attributes.get("href"):
-            self.links.append({"href": attributes["href"], "visible_text": ""})
+        if tag == "a":
+            self._active_link = None
+            if attributes.get("href") and not suppressed:
+                self._active_link = {"href": attributes["href"], "visible_text": ""}
+                self.links.append(self._active_link)
 
         if tag == "img" and attributes.get("src"):
             self.inline_images.append(
@@ -78,6 +82,8 @@ class _SafeHTMLExtractor(HTMLParser):
             )
 
     def handle_endtag(self, tag: str) -> None:
+        if tag.lower() == "a":
+            self._active_link = None
         for index in range(len(self._visibility_stack) - 1, -1, -1):
             if self._visibility_stack[index][0] == tag.lower():
                 del self._visibility_stack[index:]
@@ -100,9 +106,9 @@ class _SafeHTMLExtractor(HTMLParser):
         if self._form is not None:
             self._form_text.append(text)
 
-        if self.links:
-            self.links[-1]["visible_text"] = (
-                self.links[-1]["visible_text"] + " " + text
+        if self._active_link is not None:
+            self._active_link["visible_text"] = (
+                self._active_link["visible_text"] + " " + text
             ).strip()
 
 

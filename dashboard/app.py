@@ -108,6 +108,7 @@ def render_email(email_id: str):
     view = result.get("explanation") or explain_analysis({**result, "findings": (findings or {}).get("findings", [])})
     st.subheader(f"{view['classification']} | {score}/100")
     st.info(view["summary"])
+    st.write(view.get("sender_summary", "Review sender identity checks below."))
     c1, c2, c3 = st.columns(3)
     confidence = float(result.get("confidence") or 0)
     c1.metric("Observation confidence", f"{confidence:.0%}" if confidence else "Not estimated")
@@ -126,6 +127,13 @@ def render_email(email_id: str):
 
     tabs = st.tabs(["Why this result?", "Origin trace", "Relationships", "Limitations"])
     with tabs[0]:
+        contributions = view.get("score_contributions", [])
+        if contributions:
+            st.subheader("What contributed to the score")
+            for contribution in contributions:
+                amount = (str(contribution["points"]) + " points") if "points" in contribution else ("Minimum score " + str(contribution.get("floor", "")))
+                st.write(amount + ": " + contribution.get("reason", contribution.get("rule", "Observation")))
+            st.caption("Repeated rules count once at their strongest severity. Minimum-score rules apply as a floor; the total is capped at 100.")
         st.subheader("Why NETRA reached this result")
         if findings_error:
             st.warning("Some finding details could not be loaded: " + findings_error)
@@ -147,6 +155,9 @@ def render_email(email_id: str):
                 st.write("Destination: " + (url["destination"] or "Not established"))
                 if url.get("label_explanation"):
                     st.write(url["label_explanation"])
+                for hop in url.get("tracking_chain", []):
+                    st.caption(hop.get("provider", "Redirect") + " — decoded destination, not a live visit")
+                    st.code(hop.get("decoded_target", "Unknown"), language=None)
                 for reason in url["reasons"]:
                     st.write("- " + reason)
                 if not url["reasons"]:

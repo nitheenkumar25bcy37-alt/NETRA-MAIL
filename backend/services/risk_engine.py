@@ -16,7 +16,9 @@ class RiskEngine:
         score = 0.0
         confidence_values = []
 
-        for finding in findings:
+        # Keep the strongest observation per rule, independent of URL order.
+        ranked = sorted(findings, key=lambda f: cls.SEVERITY_WEIGHT.get(str(f.get("severity", "info")).lower(), 0) * max(0, min(1, float(f.get("confidence", 0)))), reverse=True)
+        for finding in ranked:
             rule = str(finding.get("rule", "unknown"))
             if rule in seen_rules:
                 continue

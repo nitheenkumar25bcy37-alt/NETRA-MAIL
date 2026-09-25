@@ -50,7 +50,7 @@ class AnalysisOrchestrator:
     - Language alone is never considered malicious.
     """
 
-    VERSION = "4.5.3"
+    VERSION = "4.5.4"
 
     def __init__(
         self,
@@ -408,6 +408,8 @@ class AnalysisOrchestrator:
 
         from backend.services.email_features import email_feature_text
         text = email_feature_text(parsed)
+        from backend.services.financial_context import request_text
+        lexical_text, contextual_observations = request_text(text)
 
         # ==============================================================
         # 2. EXISTING NLP
@@ -415,11 +417,12 @@ class AnalysisOrchestrator:
 
         nlp = (
             NLPEngine.analyze_text(
-                text
+                lexical_text
             )
             or {}
         )
 
+        nlp["contextual_observations"] = contextual_observations
         # Keep a copy of the original English NLP categories.
         #
         # This is important because multilingual categories should not
@@ -534,14 +537,16 @@ class AnalysisOrchestrator:
         # ==============================================================
 
         # Generic request words are not independent authority evidence.
-        generic = {"require", "required", "requires", "request", "requested", "please", "action required"}
+        generic = {"require", "required", "requires", "request", "requested", "please", "action required", "trusted", "manager"}
         social = [cue for cue in social if str(cue).lower() not in generic]
         if "social_engineering" in nlp.get("categories", {}):
             nlp["categories"]["social_engineering"] = [
                 cue for cue in nlp["categories"]["social_engineering"]
                 if str(cue).lower() not in generic
             ]
-        if urgency and (
+        import re
+        sensitive_request = re.search(r"\b(?:send|submit|enter|provide|verify|confirm|transfer|wire|pay|remit|purchase|sign in|log in)\b[^.!?\n]{0,120}\b(?:password|otp|code|credentials|identity|account|funds|money|payment|gift cards?)\b", lexical_text, re.I)
+        if urgency and sensitive_request and (
             credentials
             or financial
             or social
@@ -654,6 +659,9 @@ class AnalysisOrchestrator:
                 item.setdefault("limitations", []).append("Infrastructure and forwarding differences are weak context; they do not independently establish an attack.")
             if item.get("rule") == "message_id_domain_mismatch":
                 item["severity"] = "info"
+            if verified.get("dmarc", {}).get("status") == "pass" and item.get("rule") == "from_return_path_mismatch":
+                item["severity"] = "info"
+                item.setdefault("limitations", []).append("Aligned DMARC passed. A separate envelope return path is normal for outsourced delivery and is not a spoofing failure.")
             if verified["dmarc"]["status"] == "pass" and item.get("rule") in {"spf_misalignment", "dkim_misalignment", "dmarc_misalignment"}:
                 item["severity"] = "info"
                 item.setdefault("limitations", []).append("Verified DMARC passed through at least one aligned identifier.")
@@ -714,8 +722,9 @@ class AnalysisOrchestrator:
                 target = str(reference.get("href", ""))
                 if len(expansions) >= 2:
                     break
-                if URLAnalyzer.analyze_url(target).get("is_shortener"):
-                    expansion = URLExpander.expand(target)
+                preliminary = URLAnalyzer.analyze_url(target)
+                if preliminary.get("is_shortener"):
+                    expansion = URLExpander.expand(preliminary.get("redirect_target") or target)
                     expansions.append(expansion)
                     if expansion.get("expanded"):
                         references.append({"href": expansion["final_url"], "visible_text": "Expanded short URL"})
@@ -759,6 +768,8 @@ class AnalysisOrchestrator:
             return False
 
         def aligned_first_party(item):
+            if item.get("wrapper_structural_warning"):
+                return False
             registered = str(
                 item.get("registered_domain")
                 or item.get("actual_registered_domain")
@@ -772,12 +783,17 @@ class AnalysisOrchestrator:
             )
         for item in url_result.get("findings", []):
             item = dict(item)
-            if aligned_first_party(item.get("evidence", {})):
+            if item.get("rule") in {"suspicious_url_features", "visible_href_mismatch", "same_domain_link_host_difference"} and aligned_first_party(item.get("evidence", {})):
                 item["severity"] = "info"
                 item.setdefault("limitations", []).append("The URL is first-party aligned with an independently authenticated sender; heuristic structure alone is insufficient for a threat verdict.")
             findings.append(item)
+        for item in url_result.get("urls", []):
+            item["authenticated_sender_context"] = aligned_first_party(item)
         from backend.intelligence.reputation_provider import URLReputationProvider
-        reputation = URLReputationProvider().lookup([str(item.get("href", "")) for item in references])
+        reputation = URLReputationProvider().lookup(list(dict.fromkeys(
+            [str(item.get("redirect_target")) for item in url_result.get("urls", []) if item.get("redirect_target")]
+            + [str(item.get("href", "")) for item in references]
+        )))
         parsed["url_reputation"] = reputation
         findings.extend(reputation.get("findings", []))
         suspicious_urls = [item for item in url_result.get("urls", []) if int(item.get("risk_score", 0)) >= 35 and not aligned_first_party(item)]
@@ -789,7 +805,7 @@ class AnalysisOrchestrator:
             cue for cue in credentials
             if str(cue).strip().lower() not in weak_credential_context
         ]
-        if strong_credentials and suspicious_urls:
+        if strong_credentials and suspicious_urls and sensitive_request:
             findings.append(self._finding(
                 "Text", "credential_request_with_suspicious_link", "high", 0.9,
                 "Credential request includes a suspicious link",

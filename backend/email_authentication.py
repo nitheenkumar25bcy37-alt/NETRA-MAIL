@@ -114,6 +114,14 @@ class EmailAuthenticationVerifier:
             dmarc["receiver_status"] = dmarc_match.group(1).lower()
             dmarc["receiver_from_domain"] = dmarc_match.group(2).lower().rstrip(".")
         dmarc["reason"] = "Local alignment uses verified signatures and trusted sending-server results." if dmarc["status"] != "unavailable" else "No verified aligned signature or trusted sending-server result was available for local alignment."
+        # Receipt-time verification can use signing keys no longer available
+        # during a later recheck. Only provider-fetched bytes establish trust;
+        # an uploaded Authentication-Results header never enters this branch.
+        if dmarc_match and dmarc["receiver_from_domain"] == from_domain and dmarc["receiver_status"] in {"pass", "fail"}:
+            dmarc["local_alignment_status"] = dmarc["status"]
+            dmarc["status"] = dmarc["receiver_status"]
+            dmarc["source"] = "trusted_receiver"
+            dmarc["reason"] = "Gmail reported this DMARC result at delivery for the visible sender domain. The later local alignment recheck is recorded separately."
         return {"status": dkim_result.get("status", "unavailable"), "signatures": dkim_result.get("signatures", []),
             "dkim": dkim_result, "spf": spf, "dmarc": dmarc, "arc": arc_result,
             "trusted_authserv_ids": sorted(active_trust),
