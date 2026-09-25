@@ -8,7 +8,7 @@ def status():
     enabled = os.getenv("NETRA_URL_REPUTATION_ENABLED", "false").lower() in {"1", "true", "yes"}
     keys = {"google_safe_browsing": bool(os.getenv("NETRA_GOOGLE_SAFE_BROWSING_KEY")),
             "urlhaus": bool(os.getenv("NETRA_URLHAUS_AUTH_KEY"))}
-    image = os.getenv("NETRA_INSPECTION_IMAGE", "netra-inspector:4.4.0")
+    image = os.getenv("NETRA_INSPECTION_IMAGE", "netra-inspector:4.6.0")
     worker = "unavailable"
     try:
         result = subprocess.run(["docker", "image", "inspect", "--format", "{{.Id}}", image],

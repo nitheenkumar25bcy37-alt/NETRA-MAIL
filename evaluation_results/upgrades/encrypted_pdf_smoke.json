@@ -1,0 +1,95 @@
+{
+  "scope": "Five synthetic functional smoke cases, local Windows portable worker. Not detection accuracy or a production latency benchmark.",
+  "passed": 5,
+  "total": 5,
+  "results": [
+    {
+      "case": "benign",
+      "expected": "no_threats_detected",
+      "status": "no_threats_detected",
+      "passed": true,
+      "latency_seconds": 15.319,
+      "pages": [
+        {
+          "page": 1,
+          "checks": {
+            "text": "completed",
+            "ml": "completed",
+            "links": "no HTTP links extracted",
+            "ocr": "completed",
+            "qr": "completed"
+          },
+          "qr_count": 0
+        }
+      ]
+    },
+    {
+      "case": "phishing",
+      "expected": "suspicious",
+      "status": "suspicious",
+      "passed": true,
+      "latency_seconds": 11.62,
+      "pages": [
+        {
+          "page": 1,
+          "checks": {
+            "text": "completed",
+            "ml": "completed",
+            "links": "completed",
+            "ocr": "completed",
+            "qr": "completed"
+          },
+          "qr_count": 0
+        }
+      ]
+    },
+    {
+      "case": "qr",
+      "expected": "suspicious",
+      "status": "suspicious",
+      "passed": true,
+      "latency_seconds": 5.518,
+      "pages": [
+        {
+          "page": 1,
+          "checks": {
+            "text": "no readable text",
+            "ml": "no readable text",
+            "links": "completed",
+            "ocr": "completed",
+            "qr": "completed"
+          },
+          "qr_count": 1
+        }
+      ]
+    },
+    {
+      "case": "active",
+      "expected": "suspicious",
+      "status": "suspicious",
+      "passed": true,
+      "latency_seconds": 7.358,
+      "pages": [
+        {
+          "page": 1,
+          "checks": {
+            "text": "completed",
+            "ml": "completed",
+            "links": "no HTTP links extracted",
+            "ocr": "completed",
+            "qr": "completed"
+          },
+          "qr_count": 0
+        }
+      ]
+    },
+    {
+      "case": "wrong_password",
+      "expected": "not_inspected",
+      "status": "not_inspected",
+      "passed": true,
+      "latency_seconds": 0.533,
+      "pages": []
+    }
+  ]
+}

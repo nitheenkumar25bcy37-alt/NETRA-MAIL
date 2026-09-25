@@ -15,7 +15,7 @@ def _portable_ocr(data):
 
 
 def analyze_image(data: bytes, content_type: str) -> dict:
-    result = {"available": False, "qr_payloads": [], "ocr_text": "", "ocr_available": False, "limitations": []}
+    result = {"available": False, "qr_available": False, "qr_payloads": [], "ocr_text": "", "ocr_available": False, "limitations": []}
     if not content_type.lower().startswith("image/") or not data or len(data) > 5 * 1024 * 1024:
         return result
     try:
@@ -49,6 +49,7 @@ def analyze_image(data: bytes, content_type: str) -> dict:
             enlarged = cv2.resize(bordered, None, fx=scale, fy=scale, interpolation=cv2.INTER_NEAREST)
             values = [detector.detectAndDecode(enlarged)[0]]
         result["qr_payloads"] = [value[:2048] for value in values if value][:20]
+        result["qr_available"] = True
     except Exception:
         result["limitations"].append("QR decoder unavailable or unable to decode this image.")
     try:

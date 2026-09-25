@@ -48,6 +48,8 @@ def explain_analysis(result):
         limited = item.get("content_coverage") == "limited" or item.get("encrypted_archive") or item.get("content_type") == "application/pdf"
         coverage = "unavailable" if skipped else "limited" if limited else "static"
         attachments.append({
+            "sha256": item.get("sha256", ""),
+            "can_unlock_pdf": item.get("magic_signature") == "PDF document" or item.get("content_type") == "application/pdf",
             "filename": str(item.get("filename") or "unnamed attachment"),
             "content_type": str(item.get("content_type") or "unknown"),
             "size_bytes": int(item.get("size_bytes") or 0),

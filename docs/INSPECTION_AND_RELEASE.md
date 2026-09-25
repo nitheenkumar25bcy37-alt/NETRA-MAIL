@@ -10,7 +10,7 @@ files; provision a trusted model separately or use the documented heuristic mode
 From the project root, build the inspection image:
 
 ```powershell
-docker build -f inspection/Dockerfile -t netra-inspector:4.4.0 .
+docker build -f inspection/Dockerfile -t netra-inspector:4.6.0 .
 python -m backend.operational_status
 python scripts/start_local.py
 ```

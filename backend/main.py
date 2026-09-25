@@ -26,6 +26,7 @@ Run from project root:
 
 import asyncio
 import hashlib
+import json
 import inspect
 import ipaddress
 import os
@@ -5099,7 +5100,53 @@ async def get_email_v2(email_id: str):
     response["evidence_reference"] = result.get("evidence_reference")
     from backend.presentation import explain_analysis
     response["explanation"] = explain_analysis(result)
+    response["attachment_reviews"] = db.list_attachment_reviews(email_id)
     return response
+
+
+@app.post("/api/v2/emails/{email_id}/attachments/{attachment_sha256}/unlock")
+async def unlock_pdf_attachment(email_id: str, attachment_sha256: str, request: Request):
+    """Authenticated analyst operation; original evidence is never overwritten."""
+    import re
+    from backend.attachment_review import original_attachment, review_pdf
+    if not re.fullmatch(r"[0-9a-f]{64}", attachment_sha256):
+        raise HTTPException(status_code=400, detail="Invalid attachment reference.")
+    result = _get_v2_result(email_id)
+    # Do not accept arbitrary uploads or substitute attachments in this route.
+    known = result.get("parsed", {}).get("attachment_analysis", {}).get("attachments", [])
+    if not any(item.get("sha256") == attachment_sha256 for item in known):
+        raise HTTPException(status_code=404, detail="Attachment was not found in this investigation.")
+    body = {}
+    password = None
+    try:
+        raw_body = await request.body()
+        if len(raw_body) > 4096:
+            raise ValueError()
+        body = json.loads(raw_body)
+        if not isinstance(body, dict) or set(body) != {"password", "consent"}:
+            raise ValueError()
+        password = body.get("password")
+        if body.get("consent") is not True or not isinstance(password, str) or len(password) > 256:
+            raise ValueError()
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="Explicit consent and a document password of at most 256 characters are required.")
+    finally:
+        if isinstance(body, dict):
+            body.clear()
+    try:
+        data = await asyncio.to_thread(original_attachment, result, evidence_service, email_id, attachment_sha256)
+    except Exception:
+        password = None
+        raise HTTPException(status_code=409, detail="The preserved original attachment is unavailable or failed integrity checks. Analyze the original email again before unlocking it.")
+    try:
+        review = await asyncio.to_thread(review_pdf, data, password, email_id, attachment_sha256, request.state.principal.subject)
+    except Exception:
+        raise HTTPException(status_code=422, detail="The PDF could not be safely inspected. Its contents remain unverified.")
+    finally:
+        password = None
+        data = None
+    db.record_attachment_review(review)
+    return review
 
 
 @app.get("/api/v2/me")

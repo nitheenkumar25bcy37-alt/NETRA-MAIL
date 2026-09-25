@@ -104,6 +104,8 @@ def render_email(email_id: str):
     relationships, relation_error = safe_call(client.relationships, email_id)
     st.title("Email Investigation")
     st.caption(email_id)
+    if any(review.get("status") == "suspicious" for review in result.get("attachment_reviews", [])):
+        st.error("An optional PDF review found suspicious content or active features. Check the attachment review below, even if the original email score is low.")
     score = int(result.get("risk_score", 0))
     view = result.get("explanation") or explain_analysis({**result, "findings": (findings or {}).get("findings", [])})
     st.subheader(f"{view['classification']} | {score}/100")
@@ -167,11 +169,17 @@ def render_email(email_id: str):
                 model = url["model"]
                 st.caption("URL model: " + (str(model.get("classification", "Prediction available")) if model.get("available") else "Unavailable") + "; " + ("contributed with structural evidence" if model.get("used_in_score") else "did not contribute to URL score"))
         st.subheader("Attachment, QR and OCR analysis")
+        from dashboard.attachment_review_ui import unlock_dialog, render_reviews
+        render_reviews(result.get("attachment_reviews", []))
         st.write(view["attachment_analysis"]["summary"])
         for item in view["attachment_analysis"]["attachments"]:
             with st.expander(f"{item['filename']} | {item.get('assessment_label', item['status'])}", expanded=item["risk_score"] >= 35):
                 st.write(f"Type: {item['content_type']} | Size: {item['size_bytes']} bytes")
                 st.write("**" + item["status"] + "**")
+                if item.get("can_unlock_pdf") and item.get("sha256"):
+                    st.caption("Password-protected PDF? You can optionally unlock it for a separate content review.")
+                    if st.button("Unlock and scan PDF", key="unlock_" + email_id + "_" + item["sha256"]):
+                        unlock_dialog(client, email_id, item["sha256"], item["filename"])
                 if item.get("inspection_help"):
                     st.info(item["inspection_help"])
                 if item.get("coverage") != "static" and item["risk_score"] >= 35:

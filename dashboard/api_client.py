@@ -15,7 +15,8 @@ class APIClient:
         headers = dict(kwargs.pop("headers", {}) or {})
         if self.api_key:
             headers["X-NETRA-API-Key"] = self.api_key
-        response = requests.request(method, f"{self.base_url}{path}", timeout=45, headers=headers, allow_redirects=False, **kwargs)
+        timeout = kwargs.pop("timeout", 45)
+        response = requests.request(method, f"{self.base_url}{path}", timeout=timeout, headers=headers, allow_redirects=False, **kwargs)
         if 300 <= response.status_code < 400:
             raise RuntimeError("Backend redirects are not permitted.")
         if response.status_code == 404 and path.startswith("/api/v2/emails/"):
@@ -51,6 +52,15 @@ class APIClient:
 
     def upload_original(self, filename: str, raw: bytes) -> Dict[str, Any]:
         return self.post("/api/v2/emails/upload", files={"file": (filename, raw, "message/rfc822")})
+
+    def unlock_pdf(self, email_id: str, digest: str, password: str):
+        from urllib.parse import urlsplit
+        target = urlsplit(self.base_url)
+        local = target.hostname in {"localhost", "127.0.0.1", "::1"}
+        if target.username or target.password or not (target.scheme == "https" or (local and target.scheme == "http")):
+            raise ValueError("PDF passwords require HTTPS, except on localhost.")
+        return self.post(f"/api/v2/emails/{email_id}/attachments/{digest}/unlock",
+                         json={"password": password, "consent": True}, timeout=90)
 
     def findings(self, email_id: str) -> Dict[str, Any]:
         return self.get(f"/api/v2/emails/{email_id}/findings")

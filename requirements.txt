@@ -21,3 +21,5 @@ folium>=0.17,<1
 
 # Offline public/private suffix boundaries for deceptive-link detection
 tldextract==5.3.2
+pypdf==6.19.0
+pypdfium2==5.13.0

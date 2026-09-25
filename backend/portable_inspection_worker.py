@@ -20,11 +20,23 @@ def main() -> None:
     if len(raw) > 15 * 1024 * 1024:
         raise ValueError("input_limit")
     task = json.loads(raw)
-    if task.get("operation") != "attachment":
+    if task.get("operation") not in {"attachment", "pdf_unlock"}:
         raise ValueError("unsupported_operation")
     data = base64.b64decode(task["data"], validate=True)
     if len(data) > 10 * 1024 * 1024:
         raise ValueError("attachment_limit")
+    if task.get("operation") == "pdf_unlock":
+        # Defense in depth for portable Python libraries. OS network isolation
+        # is provided by Docker mode; this hook is not a native-code sandbox.
+        def deny_network(event, args):
+            if event in {"socket.connect", "socket.getaddrinfo", "socket.bind"}:
+                raise PermissionError("PDF inspection is offline")
+        sys.addaudithook(deny_network)
+        with contextlib.redirect_stdout(sys.stderr):
+            from backend.pdf_inspection import inspect_pdf
+            result = inspect_pdf(data, task.pop("password", ""))
+        sys.stdout.write(json.dumps(result, ensure_ascii=True))
+        return
     content_type = str(task.get("content_type", ""))[:200]
     filename = str(task.get("filename", ""))[:1024]
     with contextlib.redirect_stdout(sys.stderr):

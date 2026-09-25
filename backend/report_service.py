@@ -42,6 +42,8 @@ class ReportService:
         for item in analyses:
             email_sections.append({"email_id": item.get("email_id"), "evidence": item.get("evidence"), "classification": item.get("classification"), "risk_score": item.get("risk_score"), "findings": item.get("findings", []), "explanation": explain_analysis(item), "parsed": {key: item.get("parsed", {}).get(key) for key in ("metadata", "origin_trace", "ip_intelligence", "domain_intelligence")}})
         relationships = [relationship for email_id in email_ids for relationship in self.db.get_relationships(email_id)]
+        for section in email_sections:
+            section["attachment_reviews"] = self.db.list_attachment_reviews(section["email_id"])
         custody = [event for item in evidence for event in self.db.get_custody(item["evidence_id"])]
         report = {
             "report_id": report_id,
@@ -82,6 +84,17 @@ class ReportService:
         for email in report["observed_evidence"].get("emails", []):
             lines.append("Email: " + str(email.get("email_id")))
             lines.extend(explanation_lines(email.get("explanation") or explain_analysis(email)))
+            for review in email.get("attachment_reviews", []):
+                lines.append("Supplemental PDF review: " + review["summary"])
+                lines.append("Original attachment SHA-256: " + review["attachment_sha256"])
+                lines.extend(review.get("warnings", []))
+                for page in review.get("pages", []):
+                    lines.append("Page " + str(page["page"]) + ": " + "; ".join(k + " " + v for k, v in page["checks"].items()))
+                    lines.extend(page.get("warnings", []))
+                    for link in page.get("links", []):
+                        lines.append("Link host: " + str(link["host"]) + "; static risk " + str(link["risk_score"]) + "/100")
+                    lines.extend(page.get("limitations", []))
+                lines.extend(review.get("limitations", []))
         lines.extend(["Evidence integrity:", f"Evidence count: {report['evidence_count']}; integrity verified: {report['integrity_verified']}"])
         lines.extend(f"{item.get('evidence_id')}: {item.get('sha256')}" for item in report.get("evidence_inventory", []))
         lines.extend(["Report limitations:", *report["limitations"], report["attribution_disclaimer"]])

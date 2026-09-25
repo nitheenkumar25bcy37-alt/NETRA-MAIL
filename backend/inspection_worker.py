@@ -37,6 +37,12 @@ def main():
             result = {"available": True, "static_analysis": static,
                 "image_analysis": image, "embedded_urls": list(dict.fromkeys(value[:2048] for value in urls))[:100],
                 "archive_members": static.get("archive_members", [])}
+        elif task.get("operation") == "pdf_unlock":
+            from backend.pdf_inspection import inspect_pdf
+            data = base64.b64decode(task["data"], validate=True)
+            if len(data) > 10 * 1024 * 1024:
+                raise ValueError("attachment_limit")
+            result = inspect_pdf(data, task.pop("password", ""))
         elif task.get("operation") == "url":
             from backend.controlled_fetch import expand_url
             fetched = expand_url(task.get("url", ""))

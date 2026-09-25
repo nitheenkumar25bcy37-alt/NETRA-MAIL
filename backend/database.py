@@ -224,6 +224,13 @@ class ForensicLedgerDB:
                     email_id TEXT PRIMARY KEY,
                     subject TEXT NOT NULL
                 );
+                CREATE TABLE IF NOT EXISTS attachment_reviews (
+                    review_id TEXT PRIMARY KEY,
+                    email_id TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    review_json TEXT NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS idx_attachment_reviews_email ON attachment_reviews(email_id);
                 """
             )
 
@@ -237,6 +244,17 @@ class ForensicLedgerDB:
                 (email_id, datetime.now(timezone.utc).isoformat(), sha256, payload),
             )
             conn.commit()
+
+    def record_attachment_review(self, review):
+        with self._connect() as conn:
+            conn.execute("INSERT INTO attachment_reviews VALUES (?, ?, ?, ?)",
+                         (review["review_id"], review["email_id"], review["created_at"], json.dumps(review)))
+            conn.commit()
+
+    def list_attachment_reviews(self, email_id):
+        with self._connect() as conn:
+            rows = conn.execute("SELECT review_json FROM attachment_reviews WHERE email_id=? ORDER BY created_at DESC LIMIT 20", (email_id,)).fetchall()
+        return [json.loads(row[0]) for row in rows]
 
     def record_storage_blob(self, reference, key_id, sha256, size_bytes):
         with self._connect() as conn:

@@ -58,7 +58,7 @@ def _portable_attachment(task, timeout=35):
 
 
 def inspect_task(task, timeout=35):
-    image = os.getenv("NETRA_INSPECTION_IMAGE", "netra-inspector:4.4.0")
+    image = os.getenv("NETRA_INSPECTION_IMAGE", "netra-inspector:4.6.0")
     if not re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9._/:@-]{0,240}", image):
         return {"available": False, "error": "invalid_worker_image"}
     if not _slots.acquire(blocking=False):
@@ -121,11 +121,13 @@ def inspect_task(task, timeout=35):
         _slots.release()
 
 
-def inspect_attachment(data, filename, content_type, timeout=35):
+def inspect_attachment(data, filename, content_type, timeout=35, *, password=None):
     if not isinstance(data, bytes) or len(data) > MAX_INPUT:
         return {"available": False, "error": "attachment_size_limit"}
     task = {"operation": "attachment", "filename": str(filename)[:1024],
         "content_type": str(content_type)[:200], "data": base64.b64encode(data).decode("ascii")}
+    if password is not None:
+        task.update(operation="pdf_unlock", password=password)
     # Native hosted runtimes do not supply a Docker daemon. An explicit mode
     # still wins; never silently fall back after a configured Docker failure.
     default_mode = "portable" if os.getenv("NETRA_DEPLOYMENT_MODE", "").lower() == "hosted" else "docker"
@@ -139,4 +141,40 @@ def inspect_attachment(data, filename, content_type, timeout=35):
             _slots.release()
     if mode != "docker":
         return {"available": False, "error": "invalid_inspection_mode"}
+    if password is not None:
+        return _private_pdf_task(task, timeout)
     return inspect_task(task, timeout=timeout)
+
+
+def _private_pdf_task(task, timeout):
+    """Password tasks use pipes, never the general Docker task's temp files."""
+    if not _slots.acquire(blocking=False):
+        return {"available": False, "error": "inspection_capacity_exceeded"}
+    name = "netra-pdf-" + uuid.uuid4().hex
+    image = os.getenv("NETRA_INSPECTION_IMAGE", "netra-inspector:4.6.0")
+    try:
+        if not re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9._/:@-]{0,240}", image):
+            return {"available": False, "error": "invalid_worker_image"}
+        command = ["docker", "run", "--rm", "--pull=never", "--name", name,
+                   "--network=none", "--read-only", "--cap-drop=ALL",
+                   "--security-opt=no-new-privileges", "--user=65532:65532",
+                   "--memory=768m", "--memory-swap=768m", "--cpus=1", "--pids-limit=64",
+                   "--log-driver=none", "--tmpfs=/tmp:rw,noexec,nosuid,size=32m", "-i", image]
+        completed = subprocess.run(command, input=json.dumps(task).encode(),
+            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=min(35, timeout),
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        if completed.returncode or len(completed.stdout) > MAX_OUTPUT:
+            raise ValueError("worker_failed")
+        result = json.loads(completed.stdout)
+        return result if isinstance(result, dict) else {"available": False, "error": "invalid_worker_response"}
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return {"available": False, "error": "pdf_inspection_unavailable"}
+    finally:
+        task.pop("password", None)
+        try:
+            subprocess.run(["docker", "rm", "-f", name], stdout=subprocess.DEVNULL,
+                           stderr=subprocess.DEVNULL, timeout=5,
+                           creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        except (OSError, subprocess.SubprocessError):
+            pass
+        _slots.release()
