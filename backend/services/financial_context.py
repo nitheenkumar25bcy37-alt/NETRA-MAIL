@@ -26,7 +26,9 @@ def request_evidence(text, categories):
         if not ACTION.search(sentence):
             continue
         matched = {k: [str(c) for c in values if contains_cue(sentence, str(c))] for k, values in categories.items()}
-        if not (EN_TARGET.search(sentence) or matched.get('credential_harvesting') or matched.get('financial_fraud')):
+        credential_targets = [c for c in matched.get('credential_harvesting', []) if c.casefold() not in {'verify', 'verification', 'सत्यापन', 'सत्यापित', 'login', 'log in', 'लॉगिन'}]
+        financial_targets = [c for c in matched.get('financial_fraud', []) if c.casefold() not in {'bank', 'बैंक', 'kyc', 'केवाईसी', 'debit', 'डेबिट'}]
+        if not (EN_TARGET.search(sentence) or credential_targets or financial_targets):
             continue
         result.append({'passage': sentence, 'categories': matched})
     return result

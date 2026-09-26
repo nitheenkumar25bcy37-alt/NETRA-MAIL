@@ -1517,6 +1517,11 @@ class URLAnalyzer:
         # Evaluated URL ML (bounded supporting evidence)
         # --------------------------------------------------------
 
+        # Path words and length are correlated lexical evidence, not an
+        # independent structural confirmation of the URL model.
+        independent_structure = any(result.get(key) for key in (
+            "brand_impersonation", "typosquatting", "is_ip_address", "ssrf_risk",
+            "suspicious_parameters", "high_entropy_hostname", "port_present")) or "misleading_subdomain" in result.get("suspicious_keywords", [])
         heuristic_score = int(result["risk_score"])
         try:
             from backend.url_ml_classifier import URLMLClassifier
@@ -1527,13 +1532,13 @@ class URLAnalyzer:
             # The model never creates a verdict by itself. It can strengthen a
             # URL only when the explainable analyzer independently found risk.
             # This protects ordinary unseen sites from model-only false alarms.
-            if probability >= 0.98 and heuristic_score >= 25:
+            if probability >= 0.98 and heuristic_score >= 25 and independent_structure:
                 result["risk_score"] += 15
                 ml_analysis["used_in_score"] = True
                 result["risk_reasons"].append(
                     "URL ML and independent structural indicators both identify phishing-like behavior"
                 )
-            elif probability >= 0.90 and heuristic_score >= 15:
+            elif probability >= 0.90 and heuristic_score >= 15 and independent_structure:
                 result["risk_score"] += 8
                 ml_analysis["used_in_score"] = True
                 result["risk_reasons"].append(

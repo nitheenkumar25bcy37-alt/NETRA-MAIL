@@ -27,6 +27,8 @@ def _portable_attachment(task, timeout=35):
     }
     environment["PYTHONNOUSERSITE"] = "1"
     environment["PYTHONUTF8"] = "1"
+    for key in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS", "NUMEXPR_NUM_THREADS"):
+        environment[key] = "1"
 
     def limits():
         if os.name != "posix":
@@ -47,14 +49,35 @@ def _portable_attachment(task, timeout=35):
             preexec_fn=limits if os.name == "posix" else None,
             creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
         )
-        if completed.returncode != 0 or len(completed.stdout) > MAX_OUTPUT:
-            return {"available": False, "error": "portable_inspection_worker_unavailable"}
-        result = json.loads(completed.stdout)
+        result = _portable_result(completed.stdout, completed.returncode)
         if not isinstance(result, dict) or not isinstance(result.get("available"), bool):
             return {"available": False, "error": "invalid_worker_response"}
         return result
+    except subprocess.TimeoutExpired as exc:
+        return _portable_result(exc.stdout or b"", -1)
     except (OSError, ValueError, subprocess.SubprocessError, json.JSONDecodeError):
         return {"available": False, "error": "portable_inspection_worker_unavailable"}
+
+
+def _portable_result(raw, returncode):
+    if len(raw) > MAX_OUTPUT:
+        return {"available": False, "error": "inspection_output_too_large"}
+    result = None
+    for line in raw.splitlines():
+        try:
+            candidate = json.loads(line)
+            if isinstance(candidate, dict) and isinstance(candidate.get("available"), bool):
+                if result and result.get("available") and not candidate.get("available"):
+                    returncode = -1
+                else:
+                    result = candidate
+        except (ValueError, UnicodeError):
+            continue
+    if result is None:
+        return {"available": False, "error": "portable_inspection_worker_unavailable"}
+    if returncode and result.get("available"):
+        result.setdefault("limitations", []).append("Visual inspection exceeded the worker budget; completed PDF text and link checks were preserved. OCR and QR coverage may be incomplete.")
+    return result
 
 
 def inspect_task(task, timeout=35):

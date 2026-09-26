@@ -34,7 +34,16 @@ def main() -> None:
         sys.addaudithook(deny_network)
         with contextlib.redirect_stdout(sys.stderr):
             from backend.pdf_inspection import inspect_pdf
-            result = inspect_pdf(data, task.pop("password", ""))
+            password = task.pop("password", "")
+            baseline = inspect_pdf(data, password, visual_checks=False)
+        # Preserve completed decryption/text/active-content checks before
+        # optional OCR native libraries can exhaust the worker's budget.
+        sys.stdout.write(json.dumps(baseline, ensure_ascii=True) + "\n")
+        sys.stdout.flush()
+        if not baseline.get("available"):
+            return
+        with contextlib.redirect_stdout(sys.stderr):
+            result = inspect_pdf(data, password)
         sys.stdout.write(json.dumps(result, ensure_ascii=True))
         return
     content_type = str(task.get("content_type", ""))[:200]

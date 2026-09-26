@@ -1,0 +1,1427 @@
+{
+  "scope": "user-supplied labels; independence unverified",
+  "pipeline_version": "4.8.1",
+  "threshold": 35,
+  "network": "disabled",
+  "total": 200,
+  "errors": 0,
+  "tp": 92,
+  "tn": 99,
+  "fp": 1,
+  "fn": 8,
+  "precision": 0.989247311827957,
+  "recall": 0.92,
+  "f1": 0.9533678756476683,
+  "false_positive_rate": 0.01,
+  "successful_case_accuracy": 0.955,
+  "end_to_end_correct_fraction": 0.955,
+  "latency_mean_seconds": 0.1146178095007781,
+  "latency_p95_seconds": 0.4542302999761887,
+  "rows": [
+    {
+      "path": "3fdd9d5829965699ce4b4a147ad1e5f3b26ad36edffeb85aaad5d9136e119cd6.eml",
+      "sha256": "3fdd9d5829965699ce4b4a147ad1e5f3b26ad36edffeb85aaad5d9136e119cd6",
+      "expected": true,
+      "predicted": false,
+      "risk_score": 8
+    },
+    {
+      "path": "d04fd5da6519c5fc990f64cad675041509525caa6e3d34b14b5dbc89c71f47b3.eml",
+      "sha256": "d04fd5da6519c5fc990f64cad675041509525caa6e3d34b14b5dbc89c71f47b3",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "7b36041ebf1788fd62117f405828c2e23218fc8f67f8de056809bd3f712ab4b9.eml",
+      "sha256": "7b36041ebf1788fd62117f405828c2e23218fc8f67f8de056809bd3f712ab4b9",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "9ec74a1d16eded1694b4bd08f45f2393e2b66992ec554bac900093a69c9a47cb.eml",
+      "sha256": "9ec74a1d16eded1694b4bd08f45f2393e2b66992ec554bac900093a69c9a47cb",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 41
+    },
+    {
+      "path": "21250615806ee4ca66436d23fe52c1578414b1b7890deb1365a96e0f3d170944.eml",
+      "sha256": "21250615806ee4ca66436d23fe52c1578414b1b7890deb1365a96e0f3d170944",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 38
+    },
+    {
+      "path": "eddb850f6b82869ebf30ddf8145e4c8f4271d3a26822c28170fa39e8d44f1494.eml",
+      "sha256": "eddb850f6b82869ebf30ddf8145e4c8f4271d3a26822c28170fa39e8d44f1494",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "28e0eeb4e5e3ee802802fb3b715cac60e711b5701e14f3603cab79052ffbb48f.eml",
+      "sha256": "28e0eeb4e5e3ee802802fb3b715cac60e711b5701e14f3603cab79052ffbb48f",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 43
+    },
+    {
+      "path": "3c1ea94bce918b8684afdea6bcaf74d12eb9984d3797c274136a266f13f55d08.eml",
+      "sha256": "3c1ea94bce918b8684afdea6bcaf74d12eb9984d3797c274136a266f13f55d08",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "ee9297fe91d2d1584cd7614317ae102828b9625cf96554ea9d1a1d863d5ba5ee.eml",
+      "sha256": "ee9297fe91d2d1584cd7614317ae102828b9625cf96554ea9d1a1d863d5ba5ee",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "09ca0ee1ef608a5a541c3c69143fc3606f5851470c6e8b57326ad23ded64e101.eml",
+      "sha256": "09ca0ee1ef608a5a541c3c69143fc3606f5851470c6e8b57326ad23ded64e101",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "46ea717c3a854a9eefbe06aeb5e0210ee0887429bca73550358521225bdf7504.eml",
+      "sha256": "46ea717c3a854a9eefbe06aeb5e0210ee0887429bca73550358521225bdf7504",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 37
+    },
+    {
+      "path": "39a59df9f6fbed6bc0fe0379988fe6ac880b92290ef51a9bc3820134bdf8cb0d.eml",
+      "sha256": "39a59df9f6fbed6bc0fe0379988fe6ac880b92290ef51a9bc3820134bdf8cb0d",
+      "expected": true,
+      "predicted": false,
+      "risk_score": 8
+    },
+    {
+      "path": "b83dc970682e8b2afc09773ed14610b4d565553c6981e6e5dff44559c29be960.eml",
+      "sha256": "b83dc970682e8b2afc09773ed14610b4d565553c6981e6e5dff44559c29be960",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "57ce581a21c78a6b61078e8d659c60a1421d94703077851a88a53d0cdc60b251.eml",
+      "sha256": "57ce581a21c78a6b61078e8d659c60a1421d94703077851a88a53d0cdc60b251",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 46
+    },
+    {
+      "path": "88a40fd1df3082e41081ff89be81fd903202d60a9f6d09169e3afe417d1f66f2.eml",
+      "sha256": "88a40fd1df3082e41081ff89be81fd903202d60a9f6d09169e3afe417d1f66f2",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "4d4cdcca3e4b2ee3ad41c20e290c4f8c73871fb55e6cb2fea7689bc383715164.eml",
+      "sha256": "4d4cdcca3e4b2ee3ad41c20e290c4f8c73871fb55e6cb2fea7689bc383715164",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 36
+    },
+    {
+      "path": "d0a921d8c4d41d90bdbf45d2ec5b3b785298b490e4cfb959a488ec5234398d27.eml",
+      "sha256": "d0a921d8c4d41d90bdbf45d2ec5b3b785298b490e4cfb959a488ec5234398d27",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "2235e484d285486be1d1ab08826a924b723ddbb2fa989b78e4f1d685e80d8a70.eml",
+      "sha256": "2235e484d285486be1d1ab08826a924b723ddbb2fa989b78e4f1d685e80d8a70",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 43
+    },
+    {
+      "path": "6d3a2d2358b1f1bb0c3fef9a554fd35f515a92c78be236dcc4026723348468d8.eml",
+      "sha256": "6d3a2d2358b1f1bb0c3fef9a554fd35f515a92c78be236dcc4026723348468d8",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "e36b7584e4d33beceec645fe1b635d0eb7af9afbf929901533a5cc200fbdb009.eml",
+      "sha256": "e36b7584e4d33beceec645fe1b635d0eb7af9afbf929901533a5cc200fbdb009",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 37
+    },
+    {
+      "path": "7d12994396104dc704deda851a4160700b06ccd00d353740a7efa347f69ac8d6.eml",
+      "sha256": "7d12994396104dc704deda851a4160700b06ccd00d353740a7efa347f69ac8d6",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 71
+    },
+    {
+      "path": "ccdba0a2ae1159fac5599f85171c67a9d6fa2f0cdc8206b2f85430759eff798a.eml",
+      "sha256": "ccdba0a2ae1159fac5599f85171c67a9d6fa2f0cdc8206b2f85430759eff798a",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "097dec84d0712be4dadbf757dc565336cdd062fc93d05861d4dfa422bc78e7fd.eml",
+      "sha256": "097dec84d0712be4dadbf757dc565336cdd062fc93d05861d4dfa422bc78e7fd",
+      "expected": true,
+      "predicted": false,
+      "risk_score": 7
+    },
+    {
+      "path": "f452b2555cdcc290c9ade4ab73f800389474baf175e0a1acc00655458e9a1270.eml",
+      "sha256": "f452b2555cdcc290c9ade4ab73f800389474baf175e0a1acc00655458e9a1270",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "08f57c29a7bd4ce09d5a30d65c271e2807d99b0c2521fda3fbf20b35d0b81126.eml",
+      "sha256": "08f57c29a7bd4ce09d5a30d65c271e2807d99b0c2521fda3fbf20b35d0b81126",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 43
+    },
+    {
+      "path": "efef1905ff91a0f25aced3303e617cef4080b6f3827d4ac42c9ec7040e1f7de3.eml",
+      "sha256": "efef1905ff91a0f25aced3303e617cef4080b6f3827d4ac42c9ec7040e1f7de3",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "bf6249eb3461cab08d1659c23e44316d9e2cc1d473668d15ac90a888ab95e6da.eml",
+      "sha256": "bf6249eb3461cab08d1659c23e44316d9e2cc1d473668d15ac90a888ab95e6da",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "3233c55edff705c9ce49371a10e74858cfecf968fac25f1b849c111bdee4405e.eml",
+      "sha256": "3233c55edff705c9ce49371a10e74858cfecf968fac25f1b849c111bdee4405e",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "be9589abc5930da4ac6d2b49556d4107b65792eb898847a208ef79188e8b519b.eml",
+      "sha256": "be9589abc5930da4ac6d2b49556d4107b65792eb898847a208ef79188e8b519b",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 52
+    },
+    {
+      "path": "e1d4aba151bedc6dbe9f2e8fac61a8d86c16420e2c3b6a1714cb05c92793b56b.eml",
+      "sha256": "e1d4aba151bedc6dbe9f2e8fac61a8d86c16420e2c3b6a1714cb05c92793b56b",
+      "expected": true,
+      "predicted": false,
+      "risk_score": 0
+    },
+    {
+      "path": "22d98ff729c6f1afdfe72f416f71d4041c3274ebeb2eafdcf658b78639a3ee6e.eml",
+      "sha256": "22d98ff729c6f1afdfe72f416f71d4041c3274ebeb2eafdcf658b78639a3ee6e",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "097f0e4e1c1297c6a9103edac5d9c13198260631cfff9fd9a6da943b51eb7b3d.eml",
+      "sha256": "097f0e4e1c1297c6a9103edac5d9c13198260631cfff9fd9a6da943b51eb7b3d",
+      "expected": true,
+      "predicted": false,
+      "risk_score": 5
+    },
+    {
+      "path": "8d83f892a9e1b15f0b30d50e5a07583287092bd30ae31806e98e8cbbbaee2b92.eml",
+      "sha256": "8d83f892a9e1b15f0b30d50e5a07583287092bd30ae31806e98e8cbbbaee2b92",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 51
+    },
+    {
+      "path": "88ba4cc8f140fbd3a47a5766e999205cba9a9bb5e9d30496bf1d09e5472f7684.eml",
+      "sha256": "88ba4cc8f140fbd3a47a5766e999205cba9a9bb5e9d30496bf1d09e5472f7684",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "72ea6c8576605509113fe90b5e2b72400c81cc77de6b0bd38b5c70422a4a84d3.eml",
+      "sha256": "72ea6c8576605509113fe90b5e2b72400c81cc77de6b0bd38b5c70422a4a84d3",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 62
+    },
+    {
+      "path": "53acd6d52c81ebd6ad97145d09e6fe2ab9fa2980a80bbce535b22945dc0dab48.eml",
+      "sha256": "53acd6d52c81ebd6ad97145d09e6fe2ab9fa2980a80bbce535b22945dc0dab48",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "1ab6d7a71cb19d97e147f29e193d4ef27930db1f6fd4e0c2f5b58e68d6c04f26.eml",
+      "sha256": "1ab6d7a71cb19d97e147f29e193d4ef27930db1f6fd4e0c2f5b58e68d6c04f26",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "e37c63b0765db3bd12d752382e6096fb48e5a064b8965b2364bcc58d7c6ebaa0.eml",
+      "sha256": "e37c63b0765db3bd12d752382e6096fb48e5a064b8965b2364bcc58d7c6ebaa0",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "e5142dad2ae8433cece08d4d8c05066574d7b2a4c8f4d5ebf62857442784419a.eml",
+      "sha256": "e5142dad2ae8433cece08d4d8c05066574d7b2a4c8f4d5ebf62857442784419a",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "680f6fe8077219fb58ea96e887cfea14c8df9b6ec494d5e3f65b3e791fb96fd0.eml",
+      "sha256": "680f6fe8077219fb58ea96e887cfea14c8df9b6ec494d5e3f65b3e791fb96fd0",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "4c942e5ad0885f1b65163794f0f946453e2b9a37176908723acc51757475410c.eml",
+      "sha256": "4c942e5ad0885f1b65163794f0f946453e2b9a37176908723acc51757475410c",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "d1200ac1f1db9213d17333f1856c46ef19321f77f87ab91c154ad45553bfc4bd.eml",
+      "sha256": "d1200ac1f1db9213d17333f1856c46ef19321f77f87ab91c154ad45553bfc4bd",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "90454038e5cad85484f028cc747221ba2ffce782e4883ddb4e35cff251606767.eml",
+      "sha256": "90454038e5cad85484f028cc747221ba2ffce782e4883ddb4e35cff251606767",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 37
+    },
+    {
+      "path": "a8af5912728caa1d1d33af20c4ceaef655f28164cf36ef4ce3aa540c131f32f0.eml",
+      "sha256": "a8af5912728caa1d1d33af20c4ceaef655f28164cf36ef4ce3aa540c131f32f0",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "c4259d3aae1585589e59e444dd57b2249dad55dd0a643411ebd884038e13e848.eml",
+      "sha256": "c4259d3aae1585589e59e444dd57b2249dad55dd0a643411ebd884038e13e848",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "806e3fa3b40b48846d690840d97403e8311804db17b8887799d1da756a246e46.eml",
+      "sha256": "806e3fa3b40b48846d690840d97403e8311804db17b8887799d1da756a246e46",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "871ac66164bf18e6484792f048e01d407de3b9df6a966f1776fc7d5fbc92349b.eml",
+      "sha256": "871ac66164bf18e6484792f048e01d407de3b9df6a966f1776fc7d5fbc92349b",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 66
+    },
+    {
+      "path": "92158789d122d797f6d1e18a2d74d5a25e3bf79ea7e02c9d4e1a49273da657f6.eml",
+      "sha256": "92158789d122d797f6d1e18a2d74d5a25e3bf79ea7e02c9d4e1a49273da657f6",
+      "expected": true,
+      "predicted": false,
+      "risk_score": 0
+    },
+    {
+      "path": "dc6f54e7f72a507f0ae9325b6f02ea6ea9550fda174afc7a1bbb119d1bf996e6.eml",
+      "sha256": "dc6f54e7f72a507f0ae9325b6f02ea6ea9550fda174afc7a1bbb119d1bf996e6",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "0ac2879d3e0b7f08b86e8a37b8a51e81edf826b142e4c34417365a561f51eb4e.eml",
+      "sha256": "0ac2879d3e0b7f08b86e8a37b8a51e81edf826b142e4c34417365a561f51eb4e",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 36
+    },
+    {
+      "path": "5aa5787556f48590b3d31bd45d33bf57a4a2d25251d7a96ce6b9280b5b947caa.eml",
+      "sha256": "5aa5787556f48590b3d31bd45d33bf57a4a2d25251d7a96ce6b9280b5b947caa",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 44
+    },
+    {
+      "path": "1262eecad8812ddcc15da8efa3bd95823c2b684e158abf7ec6459f7168c9b417.eml",
+      "sha256": "1262eecad8812ddcc15da8efa3bd95823c2b684e158abf7ec6459f7168c9b417",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "46ff85e95544b7f8c41df06f1890355457e573cfad0369aa945ea6b452c746b6.eml",
+      "sha256": "46ff85e95544b7f8c41df06f1890355457e573cfad0369aa945ea6b452c746b6",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "7bb5973aec633fb8db0a61a6db8a54fddbb152a5f5a84aade624bce4ea7d629e.eml",
+      "sha256": "7bb5973aec633fb8db0a61a6db8a54fddbb152a5f5a84aade624bce4ea7d629e",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "9b92ab8c663d5cb665353d86453ccb6db6078f37cb9fac8d1031859ab403396b.eml",
+      "sha256": "9b92ab8c663d5cb665353d86453ccb6db6078f37cb9fac8d1031859ab403396b",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 50
+    },
+    {
+      "path": "809ee0244b94460732f8a98f8d43f7fb60a1557f37e9980ffb573886267e4974.eml",
+      "sha256": "809ee0244b94460732f8a98f8d43f7fb60a1557f37e9980ffb573886267e4974",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "80d750404a501baa5acc7640cacfd18b1077efc6ee0279814a336394249ef459.eml",
+      "sha256": "80d750404a501baa5acc7640cacfd18b1077efc6ee0279814a336394249ef459",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 53
+    },
+    {
+      "path": "793c56c832ed6978f8536fc84855b8cac9b1c0bcb9dbf82b2a069d891260ed8b.eml",
+      "sha256": "793c56c832ed6978f8536fc84855b8cac9b1c0bcb9dbf82b2a069d891260ed8b",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 50
+    },
+    {
+      "path": "213a5f7da8df81c5a52a651e1ea3675ef1e10be2ac81fff6baf828cfeba3fa66.eml",
+      "sha256": "213a5f7da8df81c5a52a651e1ea3675ef1e10be2ac81fff6baf828cfeba3fa66",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "bd8e9d9e9491ee6f17cdafbd16ef65bd01555eb2fd2041db41ae5cc08da5df53.eml",
+      "sha256": "bd8e9d9e9491ee6f17cdafbd16ef65bd01555eb2fd2041db41ae5cc08da5df53",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "6f307f10ec9235b0c35f512582b39c298c914581608465d0715bfe92987e6d4c.eml",
+      "sha256": "6f307f10ec9235b0c35f512582b39c298c914581608465d0715bfe92987e6d4c",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "916ea3514292b51d0bd30ba35c7a10c7a17c9c1c01ad19f5157a1487f36d4ecd.eml",
+      "sha256": "916ea3514292b51d0bd30ba35c7a10c7a17c9c1c01ad19f5157a1487f36d4ecd",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "c6a802bc5a4fb55d96ff836fdc7dd4904a4850af71a6775375c9c46084681d7f.eml",
+      "sha256": "c6a802bc5a4fb55d96ff836fdc7dd4904a4850af71a6775375c9c46084681d7f",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "199cc344f8ca7bc5081ad217820ca858a6862c7d76c21c3ba82dea58baeb0288.eml",
+      "sha256": "199cc344f8ca7bc5081ad217820ca858a6862c7d76c21c3ba82dea58baeb0288",
+      "expected": true,
+      "predicted": false,
+      "risk_score": 7
+    },
+    {
+      "path": "528b96dd0dddd1e430a3367f1739ae6e0bde506371ded258a7a483e02319cd4e.eml",
+      "sha256": "528b96dd0dddd1e430a3367f1739ae6e0bde506371ded258a7a483e02319cd4e",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 46
+    },
+    {
+      "path": "be5a1f8565ee960b63ed5f2382511f12f2b9f306421ebe12b8aec0ea6d88257f.eml",
+      "sha256": "be5a1f8565ee960b63ed5f2382511f12f2b9f306421ebe12b8aec0ea6d88257f",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "7dc041574fcbc382d2dadc7b98bb12593580474033b97a479fdea4a5623c4d26.eml",
+      "sha256": "7dc041574fcbc382d2dadc7b98bb12593580474033b97a479fdea4a5623c4d26",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "b87cd901937a0a21997c9d8c331c9299c27cdc7229c366fadf2a0f237458372b.eml",
+      "sha256": "b87cd901937a0a21997c9d8c331c9299c27cdc7229c366fadf2a0f237458372b",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "c625895f9e6262a5a254b5f18662023e05ac22482b2aa0f1df8672a851fbb322.eml",
+      "sha256": "c625895f9e6262a5a254b5f18662023e05ac22482b2aa0f1df8672a851fbb322",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "6b7e195fdffd4a855fc77ba096f0e3473963fae3a936e654c40a0613834597c2.eml",
+      "sha256": "6b7e195fdffd4a855fc77ba096f0e3473963fae3a936e654c40a0613834597c2",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 48
+    },
+    {
+      "path": "906aa29771000776d7eccf898663ed9271680a5c0ef52654f0c2c6504c86d54e.eml",
+      "sha256": "906aa29771000776d7eccf898663ed9271680a5c0ef52654f0c2c6504c86d54e",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "da9184f8476e8a6ad9f89535d8880007271aa4279c79ccdf5cea004937180a35.eml",
+      "sha256": "da9184f8476e8a6ad9f89535d8880007271aa4279c79ccdf5cea004937180a35",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 43
+    },
+    {
+      "path": "aaa3c599c1d81d2f5a626b3f3795d732404af91df6657c29292b22720d1cc053.eml",
+      "sha256": "aaa3c599c1d81d2f5a626b3f3795d732404af91df6657c29292b22720d1cc053",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 50
+    },
+    {
+      "path": "829fb6206a984ab63cfe847df44692d55f6ebb1c74a579c00e7348dd0738ae5e.eml",
+      "sha256": "829fb6206a984ab63cfe847df44692d55f6ebb1c74a579c00e7348dd0738ae5e",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 87
+    },
+    {
+      "path": "9650c53d397b472ea0fabb8d653d0180a03d16449e090ffc100faf391729117c.eml",
+      "sha256": "9650c53d397b472ea0fabb8d653d0180a03d16449e090ffc100faf391729117c",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "44066866145d407b368442cb0ac5fc80cedaa8eb7915a9dfadbbd8e34ad40a92.eml",
+      "sha256": "44066866145d407b368442cb0ac5fc80cedaa8eb7915a9dfadbbd8e34ad40a92",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "0991a966cee27ce459cff1f2aa632d026b657bb238101c88b725dc03b570d132.eml",
+      "sha256": "0991a966cee27ce459cff1f2aa632d026b657bb238101c88b725dc03b570d132",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "3c7aca3f2c7a84d203028d86bf2acaabf82a9693f9c77d98af1a18bfdf707695.eml",
+      "sha256": "3c7aca3f2c7a84d203028d86bf2acaabf82a9693f9c77d98af1a18bfdf707695",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "4e63a5937a33192bed16e7c6f36a825493cbb43cc5397aae1dcd2d6f35b5205a.eml",
+      "sha256": "4e63a5937a33192bed16e7c6f36a825493cbb43cc5397aae1dcd2d6f35b5205a",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 41
+    },
+    {
+      "path": "104026c155f902028289a8b242683a9cd30853a40207d4f1c644f07b4ecd0bff.eml",
+      "sha256": "104026c155f902028289a8b242683a9cd30853a40207d4f1c644f07b4ecd0bff",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 59
+    },
+    {
+      "path": "79e81632a4a840eb5fd70247487e1515cc816b5cbc3c57e546128d15234b4935.eml",
+      "sha256": "79e81632a4a840eb5fd70247487e1515cc816b5cbc3c57e546128d15234b4935",
+      "expected": true,
+      "predicted": false,
+      "risk_score": 26
+    },
+    {
+      "path": "f5bc9f4fcd68f901eb2dce2400f5b5840627d324a1e8722c3a338319d5096801.eml",
+      "sha256": "f5bc9f4fcd68f901eb2dce2400f5b5840627d324a1e8722c3a338319d5096801",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "09c188b1409a52f89b6a9ca7653574ed3fea81be6003a5b2689140467cfba2c2.eml",
+      "sha256": "09c188b1409a52f89b6a9ca7653574ed3fea81be6003a5b2689140467cfba2c2",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 65
+    },
+    {
+      "path": "636dca64cc534c2cbc659785d9de66f24f0e4019bd83cb63b4a226019473326e.eml",
+      "sha256": "636dca64cc534c2cbc659785d9de66f24f0e4019bd83cb63b4a226019473326e",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "d1a2a417a83a8203cc00bd46fa65185d51f68ef5cca88ab8d6199f23bc7557ad.eml",
+      "sha256": "d1a2a417a83a8203cc00bd46fa65185d51f68ef5cca88ab8d6199f23bc7557ad",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 51
+    },
+    {
+      "path": "05ad1d7ad89271a1368f1acb6869e4ea008e128a966e80b06da4cb7896e57007.eml",
+      "sha256": "05ad1d7ad89271a1368f1acb6869e4ea008e128a966e80b06da4cb7896e57007",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "c94973ce78dc116bf679d07ec0402300073b8404cddf84d1159dab777c8165c5.eml",
+      "sha256": "c94973ce78dc116bf679d07ec0402300073b8404cddf84d1159dab777c8165c5",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 38
+    },
+    {
+      "path": "b52bad6db73856cb3fc3bfb05b8e5bccff1fa75a0e7cf6c369bab2c8837d66c3.eml",
+      "sha256": "b52bad6db73856cb3fc3bfb05b8e5bccff1fa75a0e7cf6c369bab2c8837d66c3",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 97
+    },
+    {
+      "path": "18d509c884c8eb32762faa54c40824ade39d174f3faf08cbfabffaf42c75df9b.eml",
+      "sha256": "18d509c884c8eb32762faa54c40824ade39d174f3faf08cbfabffaf42c75df9b",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 53
+    },
+    {
+      "path": "cc70e323fa313ff5a099d74f24c6b1d17661b3e2b1556950f65c00c33041a4fa.eml",
+      "sha256": "cc70e323fa313ff5a099d74f24c6b1d17661b3e2b1556950f65c00c33041a4fa",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "a48e556398eac42707b71480101be0456754d775680a46c326dea422af9523b2.eml",
+      "sha256": "a48e556398eac42707b71480101be0456754d775680a46c326dea422af9523b2",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 79
+    },
+    {
+      "path": "4e06992ff798f97dcdc068e59f22e1950ce89defecdfbaed4b7fa90d46271837.eml",
+      "sha256": "4e06992ff798f97dcdc068e59f22e1950ce89defecdfbaed4b7fa90d46271837",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "1c83bf9d28cbd19c6e05d1259ae51818c1c8f04c064dfd39c0e33ad2fff25ae2.eml",
+      "sha256": "1c83bf9d28cbd19c6e05d1259ae51818c1c8f04c064dfd39c0e33ad2fff25ae2",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "cc3bf93c170b854b8978941b04e9f7655f27ccab89a5219612359df8e3a9f47d.eml",
+      "sha256": "cc3bf93c170b854b8978941b04e9f7655f27ccab89a5219612359df8e3a9f47d",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "e8d254f0d02fecdaa46838728a662e20d72e598587ced964c82b07f0fe2015b4.eml",
+      "sha256": "e8d254f0d02fecdaa46838728a662e20d72e598587ced964c82b07f0fe2015b4",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "2d1904124decef7b5b0d4425989c44088177890dfa81cc3a53cb82f6c40d715c.eml",
+      "sha256": "2d1904124decef7b5b0d4425989c44088177890dfa81cc3a53cb82f6c40d715c",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 65
+    },
+    {
+      "path": "6c811228da6583469b58262a42641c9973034f2e8c0df1d3d5598ce5da0b3c11.eml",
+      "sha256": "6c811228da6583469b58262a42641c9973034f2e8c0df1d3d5598ce5da0b3c11",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 87
+    },
+    {
+      "path": "6b144221f06b7dda9cfdfd24d13495136436a7f6347abdd33ce610ac7a8fe0f3.eml",
+      "sha256": "6b144221f06b7dda9cfdfd24d13495136436a7f6347abdd33ce610ac7a8fe0f3",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 36
+    },
+    {
+      "path": "30757804dc3c35508ac2644c5ff5637e570f1938755d31200ab7745c175276b7.eml",
+      "sha256": "30757804dc3c35508ac2644c5ff5637e570f1938755d31200ab7745c175276b7",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 37
+    },
+    {
+      "path": "97b1aec3bfc499604320fef47221eccc7700371a764f3e742494d3902aa45dfe.eml",
+      "sha256": "97b1aec3bfc499604320fef47221eccc7700371a764f3e742494d3902aa45dfe",
+      "expected": true,
+      "predicted": true,
+      "risk_score": 53
+    },
+    {
+      "path": "d5b5026ec6df73ac566cc5b99c6f41cd99e5b18445efe30b3717caab3b221a24.eml",
+      "sha256": "d5b5026ec6df73ac566cc5b99c6f41cd99e5b18445efe30b3717caab3b221a24",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 0
+    },
+    {
+      "path": "d81e1a3629ee73aaa1530667fce83c6942353e1209250bc9cd5f0cfdc2b3cdf8.eml",
+      "sha256": "d81e1a3629ee73aaa1530667fce83c6942353e1209250bc9cd5f0cfdc2b3cdf8",
+      "expected": false,
+      "predicted": true,
+      "risk_score": 35
+    },
+    {
+      "path": "ed3e01fe9958c46d2c667fa562d7611a0c5681b5e9d67019f37cf2905a4270e8.eml",
+      "sha256": "ed3e01fe9958c46d2c667fa562d7611a0c5681b5e9d67019f37cf2905a4270e8",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 7
+    },
+    {
+      "path": "a9cfa24fcf850f86aefa604a6550e7783be868558768692048241d045841da40.eml",
+      "sha256": "a9cfa24fcf850f86aefa604a6550e7783be868558768692048241d045841da40",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 21
+    },
+    {
+      "path": "39acb05567dfde0192ad0b1203bfb7caf1502c41d048d5acdbbda9fe46d07c9f.eml",
+      "sha256": "39acb05567dfde0192ad0b1203bfb7caf1502c41d048d5acdbbda9fe46d07c9f",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 0
+    },
+    {
+      "path": "77a66a682747108189056dd5f9336b86098204abac4e12ee0392ef4c7794c3d1.eml",
+      "sha256": "77a66a682747108189056dd5f9336b86098204abac4e12ee0392ef4c7794c3d1",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 14
+    },
+    {
+      "path": "9b700e6b92083cb7bfac01c95b6931340971c08499e70ef0edf2a11b7ac7704c.eml",
+      "sha256": "9b700e6b92083cb7bfac01c95b6931340971c08499e70ef0edf2a11b7ac7704c",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 0
+    },
+    {
+      "path": "deadbd8548f613ad2266f3d20ad076168d353d87196f649f71cdac9bac905251.eml",
+      "sha256": "deadbd8548f613ad2266f3d20ad076168d353d87196f649f71cdac9bac905251",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 20
+    },
+    {
+      "path": "771f6a8d4b8dce7f478f05f7bff9fdab0b102420d7bf45ecbdb6370ead3abd4f.eml",
+      "sha256": "771f6a8d4b8dce7f478f05f7bff9fdab0b102420d7bf45ecbdb6370ead3abd4f",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 14
+    },
+    {
+      "path": "13b0e2eae7a5b58a91e5d95a235d9991f74df55b676b369897c30700959e6b4d.eml",
+      "sha256": "13b0e2eae7a5b58a91e5d95a235d9991f74df55b676b369897c30700959e6b4d",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 0
+    },
+    {
+      "path": "8b44e10db972b191547592e11df3c7590d6f64a277795d5756805fc982a6f6b4.eml",
+      "sha256": "8b44e10db972b191547592e11df3c7590d6f64a277795d5756805fc982a6f6b4",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 17
+    },
+    {
+      "path": "a09115d041dbaebad3365da369a3f0624ac4898cd357596753affb67fdc5cc8f.eml",
+      "sha256": "a09115d041dbaebad3365da369a3f0624ac4898cd357596753affb67fdc5cc8f",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 22
+    },
+    {
+      "path": "9650d44569581f651081d6aa82e8d0450d5dc169645eba36a57a408e67ce851c.eml",
+      "sha256": "9650d44569581f651081d6aa82e8d0450d5dc169645eba36a57a408e67ce851c",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 0
+    },
+    {
+      "path": "726861a99a40ad5d6afbbc3711bc84c3dde591ba33476750833911d2626d385a.eml",
+      "sha256": "726861a99a40ad5d6afbbc3711bc84c3dde591ba33476750833911d2626d385a",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 27
+    },
+    {
+      "path": "269c5285f2d7be6fa6fd53ce871c0f88acf974b6ba5f6c00f696086094ae0f54.eml",
+      "sha256": "269c5285f2d7be6fa6fd53ce871c0f88acf974b6ba5f6c00f696086094ae0f54",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 20
+    },
+    {
+      "path": "7f1a78bb11323afdae0cd4998667a2263d8246effb386369c74963095df2a587.eml",
+      "sha256": "7f1a78bb11323afdae0cd4998667a2263d8246effb386369c74963095df2a587",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 14
+    },
+    {
+      "path": "b3c10aa7833c68e55e3865afbdfdfd2171200bd8b8d797a4091f1004d087f98e.eml",
+      "sha256": "b3c10aa7833c68e55e3865afbdfdfd2171200bd8b8d797a4091f1004d087f98e",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 14
+    },
+    {
+      "path": "3d84ec03e040db8658e74326fd95c990073faa426407899f2e4e2740119e0065.eml",
+      "sha256": "3d84ec03e040db8658e74326fd95c990073faa426407899f2e4e2740119e0065",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 28
+    },
+    {
+      "path": "623ef48a4097abe96069f6c28d0b22500d8b7ca4ceb48047a4c6a7b731c3f8da.eml",
+      "sha256": "623ef48a4097abe96069f6c28d0b22500d8b7ca4ceb48047a4c6a7b731c3f8da",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 0
+    },
+    {
+      "path": "2096b2bc007aef3b1fb43306f8823170b5a5609055b726ea42bdc6de33ad4113.eml",
+      "sha256": "2096b2bc007aef3b1fb43306f8823170b5a5609055b726ea42bdc6de33ad4113",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 21
+    },
+    {
+      "path": "c9984e433960e690f3fd0787f9d27f1b98ea2ae027d3e108956dd60f18d353d8.eml",
+      "sha256": "c9984e433960e690f3fd0787f9d27f1b98ea2ae027d3e108956dd60f18d353d8",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 14
+    },
+    {
+      "path": "464580359acd5d49f100f95159d1bb5abd54f1ef8bc8a327cf8217d5ac64f32b.eml",
+      "sha256": "464580359acd5d49f100f95159d1bb5abd54f1ef8bc8a327cf8217d5ac64f32b",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 14
+    },
+    {
+      "path": "b90ffc310e34dce880cd277df0cff72c4ffce2ebd8d92a8305784a1162b9e890.eml",
+      "sha256": "b90ffc310e34dce880cd277df0cff72c4ffce2ebd8d92a8305784a1162b9e890",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 27
+    },
+    {
+      "path": "5484b9bb3323986602a9c9fb773c5312ee056a3867b4d9ce214611de22376891.eml",
+      "sha256": "5484b9bb3323986602a9c9fb773c5312ee056a3867b4d9ce214611de22376891",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 26
+    },
+    {
+      "path": "4280cd6345d3a34556c432b8ce57a242df693a0fb5a2c83d5d8d400dd131e2dd.eml",
+      "sha256": "4280cd6345d3a34556c432b8ce57a242df693a0fb5a2c83d5d8d400dd131e2dd",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 0
+    },
+    {
+      "path": "5bb62913667faa14520ee9f31028ce5e03b9e28f995ac1c3d2461ebda605dcd6.eml",
+      "sha256": "5bb62913667faa14520ee9f31028ce5e03b9e28f995ac1c3d2461ebda605dcd6",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 0
+    },
+    {
+      "path": "b29e7b7f1ab340c7178e21f3e4cd266efed3d8bdb31050a67edd5ba7e557e25d.eml",
+      "sha256": "b29e7b7f1ab340c7178e21f3e4cd266efed3d8bdb31050a67edd5ba7e557e25d",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 14
+    },
+    {
+      "path": "856e7230fe34d5b114f12b05fea8bc63c446aef57b9cf60f3a528d5da3f5cd0e.eml",
+      "sha256": "856e7230fe34d5b114f12b05fea8bc63c446aef57b9cf60f3a528d5da3f5cd0e",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 14
+    },
+    {
+      "path": "cfcfe731b5b3188174454d33722d8b037d33aab58a2561414391d33c25413853.eml",
+      "sha256": "cfcfe731b5b3188174454d33722d8b037d33aab58a2561414391d33c25413853",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 0
+    },
+    {
+      "path": "fc41dc202abcc7d0a4386226ddfb780905bea949094fa5b5bbb4419a559b9654.eml",
+      "sha256": "fc41dc202abcc7d0a4386226ddfb780905bea949094fa5b5bbb4419a559b9654",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 0
+    },
+    {
+      "path": "659b14cd86476bb1242393feb1131f9b27b8adf7eb9f38c5a0df94a764060d9f.eml",
+      "sha256": "659b14cd86476bb1242393feb1131f9b27b8adf7eb9f38c5a0df94a764060d9f",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 0
+    },
+    {
+      "path": "128fc0e9d6318f06dcbd9e7d042c4283dfddc2555c845e838ef37f678023aebf.eml",
+      "sha256": "128fc0e9d6318f06dcbd9e7d042c4283dfddc2555c845e838ef37f678023aebf",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 14
+    },
+    {
+      "path": "d69410f8e40eb099c2eb550826bf2b62edb7017cf0166afccce86fdfb3dfe0b4.eml",
+      "sha256": "d69410f8e40eb099c2eb550826bf2b62edb7017cf0166afccce86fdfb3dfe0b4",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 14
+    },
+    {
+      "path": "2d5137c64d041f3d1a7702e2ee3b1068bd84a2a8e9a2b45f7d44c33996fd7880.eml",
+      "sha256": "2d5137c64d041f3d1a7702e2ee3b1068bd84a2a8e9a2b45f7d44c33996fd7880",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 7
+    },
+    {
+      "path": "970dfcf1b4bf1e52fa5ba53135355841859db837fe6084e74e7f93d878e127ef.eml",
+      "sha256": "970dfcf1b4bf1e52fa5ba53135355841859db837fe6084e74e7f93d878e127ef",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 21
+    },
+    {
+      "path": "7ed9d426e99e1bf8d668031fc26289fa6a7a33c7d9b815c2ed8eadb5f8f27100.eml",
+      "sha256": "7ed9d426e99e1bf8d668031fc26289fa6a7a33c7d9b815c2ed8eadb5f8f27100",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 14
+    },
+    {
+      "path": "c67f318b9f2a47a4ccaf18ebe7acf4d39f6a42b9517d21ae3a07f65cc4962574.eml",
+      "sha256": "c67f318b9f2a47a4ccaf18ebe7acf4d39f6a42b9517d21ae3a07f65cc4962574",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 14
+    },
+    {
+      "path": "fd1ef9bfaea9dd6fa49022e495591f94bc65e09b977b086307f5fc89552460ec.eml",
+      "sha256": "fd1ef9bfaea9dd6fa49022e495591f94bc65e09b977b086307f5fc89552460ec",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 0
+    },
+    {
+      "path": "e81ab1aecbfd3adfe4ec8d7a588aafc8a4c25ca32bfcbf533b71a20ea25164a3.eml",
+      "sha256": "e81ab1aecbfd3adfe4ec8d7a588aafc8a4c25ca32bfcbf533b71a20ea25164a3",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 14
+    },
+    {
+      "path": "37d5461a77446655399ce481ba5014daa3b120caf6ad45b2c5cc585425d7fadf.eml",
+      "sha256": "37d5461a77446655399ce481ba5014daa3b120caf6ad45b2c5cc585425d7fadf",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 22
+    },
+    {
+      "path": "d0e59290dd000388266ae4faf0803eda31b51d924802b22d018b89a483587b7a.eml",
+      "sha256": "d0e59290dd000388266ae4faf0803eda31b51d924802b22d018b89a483587b7a",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 14
+    },
+    {
+      "path": "6f8f2e0bec744b55bdc10763c74ad1977a341b99e364b6a34c0d37d72f680736.eml",
+      "sha256": "6f8f2e0bec744b55bdc10763c74ad1977a341b99e364b6a34c0d37d72f680736",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 14
+    },
+    {
+      "path": "62a3c8fc22d86a81b5cb2bad6dadd6307b23f327b35d0c201554fd68ab8d74ec.eml",
+      "sha256": "62a3c8fc22d86a81b5cb2bad6dadd6307b23f327b35d0c201554fd68ab8d74ec",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 21
+    },
+    {
+      "path": "6c05e2de97eccfe2ab848206bb9f37c25389f076afc644263f7e12f134f4a9d5.eml",
+      "sha256": "6c05e2de97eccfe2ab848206bb9f37c25389f076afc644263f7e12f134f4a9d5",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 15
+    },
+    {
+      "path": "d26506fea97c936fe09ca6910257e26648ffa4e177c50b22cf7bb081aa03b3a7.eml",
+      "sha256": "d26506fea97c936fe09ca6910257e26648ffa4e177c50b22cf7bb081aa03b3a7",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 14
+    },
+    {
+      "path": "8571632f7bf404cd4547b7876fc05cef9416ad285ee7df1fcec7ca2084e049b1.eml",
+      "sha256": "8571632f7bf404cd4547b7876fc05cef9416ad285ee7df1fcec7ca2084e049b1",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 0
+    },
+    {
+      "path": "8297299a85fc3f12bc5474e2b1136b479ab77173d994807482d6f41d2acf8934.eml",
+      "sha256": "8297299a85fc3f12bc5474e2b1136b479ab77173d994807482d6f41d2acf8934",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 0
+    },
+    {
+      "path": "6ee14770a3f97084576d41346c7884206f47eb61411cbc0d78f1657d80be8b3d.eml",
+      "sha256": "6ee14770a3f97084576d41346c7884206f47eb61411cbc0d78f1657d80be8b3d",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 14
+    },
+    {
+      "path": "024e35a3ea7132ed92be434cda15d056b7716ecb7e389c1f753bfef6e2f776f6.eml",
+      "sha256": "024e35a3ea7132ed92be434cda15d056b7716ecb7e389c1f753bfef6e2f776f6",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 0
+    },
+    {
+      "path": "499e9c5894b089f1fa2c5ab76930d9106c95ff15a77725144fbb4e150eec7756.eml",
+      "sha256": "499e9c5894b089f1fa2c5ab76930d9106c95ff15a77725144fbb4e150eec7756",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 0
+    },
+    {
+      "path": "f6796a66ebb77c90a9894615b794a8eca216ca8f54970bc3f28c5778c63ab878.eml",
+      "sha256": "f6796a66ebb77c90a9894615b794a8eca216ca8f54970bc3f28c5778c63ab878",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 14
+    },
+    {
+      "path": "7892ac5c87491fd0d5eb66674af112b33f5529a085dd458de6d34007fb5bd226.eml",
+      "sha256": "7892ac5c87491fd0d5eb66674af112b33f5529a085dd458de6d34007fb5bd226",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 7
+    },
+    {
+      "path": "fb9ea4f302d0427ec882092102453ec6ef511ca4c5ec355149e81ea651ed09f9.eml",
+      "sha256": "fb9ea4f302d0427ec882092102453ec6ef511ca4c5ec355149e81ea651ed09f9",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 0
+    },
+    {
+      "path": "94500734a35d4839a5af55b18f1d1672c4d792ad11916a7697ab1c48fa2e7913.eml",
+      "sha256": "94500734a35d4839a5af55b18f1d1672c4d792ad11916a7697ab1c48fa2e7913",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 22
+    },
+    {
+      "path": "1ab047040c97c8402703aba048b768d8fd92a7ea4804921e628cfe01bb40b87d.eml",
+      "sha256": "1ab047040c97c8402703aba048b768d8fd92a7ea4804921e628cfe01bb40b87d",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 14
+    },
+    {
+      "path": "196c18b0a020f8ff25c4bbb005acea7ba8393af20ed0d557d64f774bba8e89f8.eml",
+      "sha256": "196c18b0a020f8ff25c4bbb005acea7ba8393af20ed0d557d64f774bba8e89f8",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 0
+    },
+    {
+      "path": "bcf762b582bf3fd2d38d0428befcc2e3babee8b58cd09cc80b988cf3d2310cd9.eml",
+      "sha256": "bcf762b582bf3fd2d38d0428befcc2e3babee8b58cd09cc80b988cf3d2310cd9",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 0
+    },
+    {
+      "path": "03ada82ea7523bf728f0100c4a16ad13b74ee9c347c038f840c1fc3c8cd5dba6.eml",
+      "sha256": "03ada82ea7523bf728f0100c4a16ad13b74ee9c347c038f840c1fc3c8cd5dba6",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 21
+    },
+    {
+      "path": "3cf7805b27959fbf65464358d50fd68d43adc2f374b4566275f98920a0d8dd33.eml",
+      "sha256": "3cf7805b27959fbf65464358d50fd68d43adc2f374b4566275f98920a0d8dd33",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 20
+    },
+    {
+      "path": "106e35b035243b197ab88c1bb6d20db6e0679ece64e4059003475bec6b5f3db8.eml",
+      "sha256": "106e35b035243b197ab88c1bb6d20db6e0679ece64e4059003475bec6b5f3db8",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 14
+    },
+    {
+      "path": "ccba823fbe9680a80bb4f2352db3242492398650277099722c2df6273214eaae.eml",
+      "sha256": "ccba823fbe9680a80bb4f2352db3242492398650277099722c2df6273214eaae",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 0
+    },
+    {
+      "path": "17a6bf845cf8d919d821dbb30b6cfd20fa3257a580ad60a54ef1ae068cf21343.eml",
+      "sha256": "17a6bf845cf8d919d821dbb30b6cfd20fa3257a580ad60a54ef1ae068cf21343",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 0
+    },
+    {
+      "path": "4258b127519918c7731950afcbc1d29606edbb51af79d504f1a6cc0642724a7e.eml",
+      "sha256": "4258b127519918c7731950afcbc1d29606edbb51af79d504f1a6cc0642724a7e",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 0
+    },
+    {
+      "path": "c1a95179fe138d844d442b407091a21b2c563a1549e90335c4ac3cb2a3f666cc.eml",
+      "sha256": "c1a95179fe138d844d442b407091a21b2c563a1549e90335c4ac3cb2a3f666cc",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 0
+    },
+    {
+      "path": "c2f09b3ed934a91af9bbf79ba12c262ab06ebe042d659681f82c3046e4549cc4.eml",
+      "sha256": "c2f09b3ed934a91af9bbf79ba12c262ab06ebe042d659681f82c3046e4549cc4",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 14
+    },
+    {
+      "path": "c508bcd357a48e1e642f19696bd49e516b1fb50baaa8cbf633b5f1f06883263a.eml",
+      "sha256": "c508bcd357a48e1e642f19696bd49e516b1fb50baaa8cbf633b5f1f06883263a",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 14
+    },
+    {
+      "path": "00d0f1a4c180069645d374a5f71c99c7e26a3ae0b9438690669b183c4dd53070.eml",
+      "sha256": "00d0f1a4c180069645d374a5f71c99c7e26a3ae0b9438690669b183c4dd53070",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 7
+    },
+    {
+      "path": "bb2b6040a144a7160a4c43d27058d266456e70deed7fbf3f8fd4c96bb52c6dd8.eml",
+      "sha256": "bb2b6040a144a7160a4c43d27058d266456e70deed7fbf3f8fd4c96bb52c6dd8",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 0
+    },
+    {
+      "path": "6a1713a5cdfdc1db9296f69fac8cfc39dd367d102583de2ecc35a8d807dfcac2.eml",
+      "sha256": "6a1713a5cdfdc1db9296f69fac8cfc39dd367d102583de2ecc35a8d807dfcac2",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 0
+    },
+    {
+      "path": "2b8bc730829533e9636fb0778e1b96a31741c7654d31151bb1b8c2bf3918138a.eml",
+      "sha256": "2b8bc730829533e9636fb0778e1b96a31741c7654d31151bb1b8c2bf3918138a",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 0
+    },
+    {
+      "path": "b97546973e104d2ef7b60e68bc004a82725509667233690671e3b17f7b3d9c18.eml",
+      "sha256": "b97546973e104d2ef7b60e68bc004a82725509667233690671e3b17f7b3d9c18",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 14
+    },
+    {
+      "path": "82f3e70b9719ddd23f0b905386698b267784a8dea9af7b6872b4a0b841711396.eml",
+      "sha256": "82f3e70b9719ddd23f0b905386698b267784a8dea9af7b6872b4a0b841711396",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 0
+    },
+    {
+      "path": "aad2c439a1b208d94abe1b33a66c0d50d6ab6b36c3baa6f18ed432efd3ff83d9.eml",
+      "sha256": "aad2c439a1b208d94abe1b33a66c0d50d6ab6b36c3baa6f18ed432efd3ff83d9",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 14
+    },
+    {
+      "path": "400186a14877c965c0ebdadd5d24120088808553eabac0ae34c3034b66bed12a.eml",
+      "sha256": "400186a14877c965c0ebdadd5d24120088808553eabac0ae34c3034b66bed12a",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 0
+    },
+    {
+      "path": "4455ea62d54960f2eec81107b96394bafb79fac7947000d2133d6f64715d2c44.eml",
+      "sha256": "4455ea62d54960f2eec81107b96394bafb79fac7947000d2133d6f64715d2c44",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 22
+    },
+    {
+      "path": "34ac2fa96a3af3534ac1df4b20963ce843f8b7bc2a56c69794f4ac8a303df2e4.eml",
+      "sha256": "34ac2fa96a3af3534ac1df4b20963ce843f8b7bc2a56c69794f4ac8a303df2e4",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 14
+    },
+    {
+      "path": "5c836b0229986f1c458c5dfff183d5344d5b387dcbe027050e0c716137b1263b.eml",
+      "sha256": "5c836b0229986f1c458c5dfff183d5344d5b387dcbe027050e0c716137b1263b",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 14
+    },
+    {
+      "path": "5e378b6445b4dc7c81e456132595ba7325643dffae2721ab3d6160e197e118c2.eml",
+      "sha256": "5e378b6445b4dc7c81e456132595ba7325643dffae2721ab3d6160e197e118c2",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 20
+    },
+    {
+      "path": "d900ee04d014e61c2742ca15498bf0d56d5b4e55c6d29efb4ebad475cd4c3a93.eml",
+      "sha256": "d900ee04d014e61c2742ca15498bf0d56d5b4e55c6d29efb4ebad475cd4c3a93",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 0
+    },
+    {
+      "path": "6a667bc66c049862b1a50c5fcc366f2aaaf99a6fbfe8cfb1a59f3de0b5fc63c6.eml",
+      "sha256": "6a667bc66c049862b1a50c5fcc366f2aaaf99a6fbfe8cfb1a59f3de0b5fc63c6",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 14
+    },
+    {
+      "path": "d02fb35b7d8614ceddbb387ccffe9cf64d45008ca3c311d357014fbf2bb3743d.eml",
+      "sha256": "d02fb35b7d8614ceddbb387ccffe9cf64d45008ca3c311d357014fbf2bb3743d",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 14
+    },
+    {
+      "path": "11e6ea0fa04c8393ed8e33eae0c9a6439646c4095155924bb1518a76202a3ac4.eml",
+      "sha256": "11e6ea0fa04c8393ed8e33eae0c9a6439646c4095155924bb1518a76202a3ac4",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 6
+    },
+    {
+      "path": "716a958c28c94efd7a0e4113831f9719db2b4675b0d1f46d9638ebd4a530bd6f.eml",
+      "sha256": "716a958c28c94efd7a0e4113831f9719db2b4675b0d1f46d9638ebd4a530bd6f",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 14
+    },
+    {
+      "path": "8b9ca31fbfcca5574a8adbfd3a511c565c2206a0d1260038dca6aa4c1be7c633.eml",
+      "sha256": "8b9ca31fbfcca5574a8adbfd3a511c565c2206a0d1260038dca6aa4c1be7c633",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 0
+    },
+    {
+      "path": "f3dbea6f36a107bb4d1d9877402394423f9811361b17c67a0d22bce742314403.eml",
+      "sha256": "f3dbea6f36a107bb4d1d9877402394423f9811361b17c67a0d22bce742314403",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 0
+    },
+    {
+      "path": "d7cc0dc12c775b569f2fab54debdbcf37433d675fab5ba3c8de03debf0dd9693.eml",
+      "sha256": "d7cc0dc12c775b569f2fab54debdbcf37433d675fab5ba3c8de03debf0dd9693",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 7
+    },
+    {
+      "path": "332c061283fb119cf68010aec6ec0f53d079bece4c03652ca83285a6d58df452.eml",
+      "sha256": "332c061283fb119cf68010aec6ec0f53d079bece4c03652ca83285a6d58df452",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 14
+    },
+    {
+      "path": "49b2b743ee067d4ade7e9d9a92b6ac59336ddf76949525aae6746b9622f2fd10.eml",
+      "sha256": "49b2b743ee067d4ade7e9d9a92b6ac59336ddf76949525aae6746b9622f2fd10",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 14
+    },
+    {
+      "path": "2de721c1f60e876ec7cd234c43b180f130b6bc5283db36d2b0d125747d694a90.eml",
+      "sha256": "2de721c1f60e876ec7cd234c43b180f130b6bc5283db36d2b0d125747d694a90",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 0
+    },
+    {
+      "path": "b763b79a8202099075793b0cd1bbbf343dd40abfc931e5b49cbf538f44e62319.eml",
+      "sha256": "b763b79a8202099075793b0cd1bbbf343dd40abfc931e5b49cbf538f44e62319",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 22
+    },
+    {
+      "path": "8e12425ae67cbc8224b7153536adf84db6ed0ed2273df06107d98a6bb46dc8ba.eml",
+      "sha256": "8e12425ae67cbc8224b7153536adf84db6ed0ed2273df06107d98a6bb46dc8ba",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 14
+    },
+    {
+      "path": "4d5e36ef3e773692c7e2a038d69cda04b59f4fa39dab1092f51a34c4d20ed0e3.eml",
+      "sha256": "4d5e36ef3e773692c7e2a038d69cda04b59f4fa39dab1092f51a34c4d20ed0e3",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 7
+    },
+    {
+      "path": "613812710a35a7971f7e6e97ef7550907c615b7cf306934d4c7daa08563d83b4.eml",
+      "sha256": "613812710a35a7971f7e6e97ef7550907c615b7cf306934d4c7daa08563d83b4",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 12
+    },
+    {
+      "path": "7c27aeba53ffc6b6150d3b3db55df4ed18820150ad36e8123c2960a939162013.eml",
+      "sha256": "7c27aeba53ffc6b6150d3b3db55df4ed18820150ad36e8123c2960a939162013",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 14
+    },
+    {
+      "path": "66a62ad1013622cc7f6b7fe14562265f3f98709e3cdfa87153a3928448f85bac.eml",
+      "sha256": "66a62ad1013622cc7f6b7fe14562265f3f98709e3cdfa87153a3928448f85bac",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 0
+    },
+    {
+      "path": "1f5f6ad989960842240a54ab5cbac6b8d1c51bb3726c17315acc94836c93642e.eml",
+      "sha256": "1f5f6ad989960842240a54ab5cbac6b8d1c51bb3726c17315acc94836c93642e",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 15
+    },
+    {
+      "path": "0e35d0eb58a6551bd6b9237cd83e2aaa126b7b221b65aedbb7b9e3f5661bd8f9.eml",
+      "sha256": "0e35d0eb58a6551bd6b9237cd83e2aaa126b7b221b65aedbb7b9e3f5661bd8f9",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 7
+    },
+    {
+      "path": "36ab5d111d03f3d3ee9627c3bd362d0c960a1f8dbb876544f50140b4d7bcfd24.eml",
+      "sha256": "36ab5d111d03f3d3ee9627c3bd362d0c960a1f8dbb876544f50140b4d7bcfd24",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 20
+    },
+    {
+      "path": "4e29bcedbd6264e2e94dced025e6c32e25497b86907a6103224ef4dd7721ba53.eml",
+      "sha256": "4e29bcedbd6264e2e94dced025e6c32e25497b86907a6103224ef4dd7721ba53",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 14
+    },
+    {
+      "path": "960aa107e38693e0b519417cdde3caeeb7b244c439369aa93e86dea4d907f137.eml",
+      "sha256": "960aa107e38693e0b519417cdde3caeeb7b244c439369aa93e86dea4d907f137",
+      "expected": false,
+      "predicted": false,
+      "risk_score": 21
+    }
+  ],
+  "limitations": [
+    "No production-accuracy claim. External intelligence and local DKIM verification are excluded.",
+    "Supplied dataset independence and provenance must be checked separately.",
+    "Errors are reported separately, not silently counted as safe."
+  ]
+}

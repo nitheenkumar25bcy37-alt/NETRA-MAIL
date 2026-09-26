@@ -50,7 +50,7 @@ class AnalysisOrchestrator:
     - Language alone is never considered malicious.
     """
 
-    VERSION = "4.8.0"
+    VERSION = "4.8.1"
 
     def __init__(
         self,
@@ -637,7 +637,13 @@ class AnalysisOrchestrator:
             r"\b(?:send|transfer|wire|remit|pay|deposit|purchase|buy|approve)\b[^.!?\n]{0,120}\b(?:money|funds|payment|invoice|account|bank|gift\s+cards?|transaction)\b",
             text, re.I,
         )
-        if strong_financial and strong_authority and payment_instruction:
+        # Authority must occur with a positive payment request, not elsewhere
+        # in legal disclaimers or "do not share" safety advice.
+        payment_requests = [r for r in sensitive_requests if re.search(
+            r"\b(?:send|transfer|wire|remit|pay|deposit|purchase|buy|approve)\b.{0,120}\b(?:money|funds|payment|invoice|account|bank|gift\s+cards?|transaction)\b",
+            r["passage"], re.I) and re.search(
+            r"\b(?:ceo|cfo|director|executive|confidential|secret|boss|on behalf of)\b", r["passage"], re.I)]
+        if strong_financial and strong_authority and payment_requests:
             findings.append(
                 self._finding(
                     "BEC",
@@ -805,6 +811,16 @@ class AnalysisOrchestrator:
             if item.get("rule") in {"suspicious_url_features", "visible_href_mismatch", "same_domain_link_host_difference"} and aligned_first_party(item.get("evidence", {})):
                 item["severity"] = "info"
                 item.setdefault("limitations", []).append("The URL is first-party aligned with an independently authenticated sender; heuristic structure alone is insufficient for a threat verdict.")
+            from backend.tracking_links import opaque_tracking_provider
+            evidence = item.get("evidence", {})
+            if (item.get("rule") == "visible_href_mismatch"
+                    and verified.get("dmarc", {}).get("status") == "pass"
+                    and opaque_tracking_provider(evidence.get("href", ""))):
+                item.update(rule="opaque_tracking_destination", severity="low",
+                    title="Tracking link hides the final destination",
+                    description="The authenticated message uses a recognized click-tracking route. The visible address differs from that intermediary; the final destination has not been verified.")
+                item["evidence"] = {**evidence, "destination_status": "unresolved", "deceptive_domain_mismatch": None}
+                item.setdefault("limitations", []).append("Provider recognition is not destination trust. Other URL, reputation and attachment checks remain active.")
             findings.append(item)
         for item in url_result.get("urls", []):
             item["authenticated_sender_context"] = aligned_first_party(item)
@@ -824,7 +840,9 @@ class AnalysisOrchestrator:
             cue for cue in credentials
             if str(cue).strip().lower() not in weak_credential_context
         ]
-        if strong_credentials and suspicious_urls and sensitive_request:
+        credential_requests = [r for r in sensitive_requests if any(
+            cue in r["categories"].get("credential_harvesting", []) for cue in strong_credentials)]
+        if strong_credentials and suspicious_urls and credential_requests:
             findings.append(self._finding(
                 "Text", "credential_request_with_suspicious_link", "high", 0.9,
                 "Credential request includes a suspicious link",
@@ -1009,6 +1027,8 @@ class AnalysisOrchestrator:
         trusted_transactional_context = (
             (verified_dmarc.get("status") == "pass" or verified_dmarc.get("receiver_status") in {"pass", "bestguesspass"})
             and not structural_warning
+            and not pressured_requests
+            and not payment_requests
         )
         nlp["trusted_transactional_context"] = trusted_transactional_context
 

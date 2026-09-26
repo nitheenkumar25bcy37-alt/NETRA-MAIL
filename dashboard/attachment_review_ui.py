@@ -44,6 +44,8 @@ def render_reviews(reviews):
                 st.error(review["summary"])
             else:
                 st.info(review["summary"])
+            if review.get("error_code"):
+                st.caption("Scanner status: " + review["error_code"].replace("_", " "))
             for warning in review.get("warnings", []):
                 st.warning(warning)
             for page in review.get("pages", []):

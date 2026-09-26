@@ -46,6 +46,15 @@ def review_pdf(data, password, email_id, digest, actor):
                   "not_pdf": "Only PDF documents are supported.",
                   "unsupported_or_damaged_pdf": "This PDF is damaged or uses unsupported encryption.",
                   "inspection_capacity_exceeded": "The scanner is busy. Try again shortly."}
+        errors.update({
+            "portable_inspection_worker_unavailable": "The isolated scanner stopped before PDF extraction finished. This is a scanner resource/runtime failure, not a wrong-password result.",
+            "portable_inspection_failed": "The PDF scanner encountered an unsupported document or processing error. Contents remain unverified.",
+            "inspection_timeout": "The scan exceeded its time limit. Contents remain unverified.",
+            "inspection_output_too_large": "The extracted result exceeded the safe size limit. Contents remain unverified.",
+            "pdf_inspection_unavailable": "The PDF inspection service is unavailable. Check the configured inspection runtime.",
+        })
+        code = extracted.get("error")
+        review["error_code"] = code if code in errors else "inspection_unavailable"
         review["summary"] = errors.get(extracted.get("error"), "Inspection could not finish. Contents remain unverified; try again later.")
         return review
     from backend.nlp_engine import NLPEngine

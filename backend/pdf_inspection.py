@@ -9,7 +9,7 @@ MAX_PAGES = 5
 MAX_TEXT = 50000
 
 
-def inspect_pdf(data, password):
+def inspect_pdf(data, password, *, visual_checks=True):
     from pypdf import PdfReader
 
     if not data.startswith(b"%PDF-"):
@@ -52,6 +52,8 @@ def inspect_pdf(data, password):
     pages, remaining = [], MAX_TEXT
     renderer = None
     try:
+        if not visual_checks:
+            raise RuntimeError("visual_checks_deferred")
         import pypdfium2 as pdfium
         renderer = pdfium.PdfDocument(data, password=password or None)
     except Exception:

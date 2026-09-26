@@ -35,3 +35,20 @@ def embedded_destination(url):
                 'standard_provider': provider != 'Embedded redirect parameter'}
     except (ValueError, UnicodeError):
         return None
+
+
+def opaque_tracking_provider(url):
+    """Recognize a provider route, never certify its hidden destination.
+
+    Exact host/path matching avoids accepting a lookalike or an open redirect
+    elsewhere on a provider domain. No tracking URL is visited.
+    """
+    try:
+        parsed = urlsplit(url)
+        if parsed.scheme != "https" or parsed.username or parsed.password or parsed.port not in (None, 443):
+            return None
+        if parsed.hostname == "email.jiocx.com" and re.fullmatch(r"/interface/ctr/v2/[A-Za-z0-9_=-]{32,4096}", parsed.path) and not parsed.query:
+            return "JioCX opaque click route"
+    except ValueError:
+        pass
+    return None
