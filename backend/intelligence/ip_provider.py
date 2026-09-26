@@ -60,6 +60,10 @@ class IPIntelligenceProvider:
         return "public"
 
     def lookup(self, ip: str) -> Dict[str, Any]:
+        from backend.intelligence.network_enrichment import enrich_network
+        return enrich_network(self._lookup(ip))
+
+    def _lookup(self, ip: str) -> Dict[str, Any]:
         result = self._base(str(ip).strip())
         classification = self._classify(result["ip"])
         result["ip_classification"] = classification
@@ -85,8 +89,13 @@ class IPIntelligenceProvider:
             result["reason"] = "IP lookup service disabled by configuration."
             self.cache[result["ip"]] = result
             return result
+        response = None
         try:
-            options = {"timeout": self.timeout, "allow_redirects": False}
+            from urllib.parse import urlsplit
+            endpoint = urlsplit(self.endpoint)
+            if endpoint.scheme != "https" or endpoint.username or endpoint.password:
+                raise ValueError("HTTPS provider endpoint required")
+            options = {"timeout": min(max(self.timeout, 0.1), 5), "allow_redirects": False, "stream": True}
             if self.ipstack:
                 options["params"] = {"access_key": self.api_key}
             response = requests.get(self.endpoint.rstrip("/") + "/" + result["ip"], **options)
@@ -98,7 +107,8 @@ class IPIntelligenceProvider:
                 self.cache[result["ip"]] = result
                 return result
             response.raise_for_status()
-            data = response.json()
+            from backend.intelligence.reputation_provider import URLReputationProvider
+            data = URLReputationProvider._json(response, limit=65536)
             if not isinstance(data, dict):
                 raise ValueError("Provider response must be an object")
             if data.get("success") is False:
@@ -127,6 +137,13 @@ class IPIntelligenceProvider:
             if isinstance(connection, dict):
                 data = {**data, "asn": data.get("asn", connection.get("asn")), "isp": data.get("isp", connection.get("isp")), "organization": data.get("organization", connection.get("org"))}
             result.update({key: data.get(key) for key in ("country", "region", "city", "latitude", "longitude", "asn", "isp", "organization", "hosting_provider", "cloud_provider", "vpn", "proxy", "tor") if key in data})
+            for field in ("country", "region", "city", "isp", "organization", "hosting_provider", "cloud_provider"):
+                value = result.get(field)
+                result[field] = value.strip()[:300] if isinstance(value, str) and value.strip() else None
+            import re
+            asn = result.get("asn")
+            if isinstance(asn, bool) or not re.fullmatch(r"(?:AS)?[0-9]{1,10}", str(asn or ""), re.I):
+                result["asn"] = None
             for field, limit in (("latitude", 90), ("longitude", 180)):
                 value = result.get(field)
                 try:
@@ -153,5 +170,8 @@ class IPIntelligenceProvider:
             result.update(available=False, location_available=False, latitude=None, longitude=None)
             result["source"] = "provider_unavailable"
             result["reason"] = "The lookup provider could not return usable data (network, response or service error)."
+        finally:
+            if response is not None:
+                response.close()
         self.cache[result["ip"]] = result
         return result

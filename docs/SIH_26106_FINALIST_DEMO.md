@@ -1,89 +1,60 @@
-# NETRA-Mail: SIH 2026 Finalist Demonstration Guide
+# NETRA-Mail: SIH 26106 demonstration guide (4.8)
 
-## One-line proposition
+## Current claim
 
-NETRA-Mail transforms a suspicious email into an investigation-ready case: it
-detects risk, explains the evidence, traces observed infrastructure, correlates
-related campaigns, and preserves tamper-evident evidence for analyst review.
+NETRA-Mail connects user-initiated email analysis to sourced infrastructure evidence, a qualified relationship graph and a preserved forensic report. It assists investigation; it does not prove human identity, guarantee safety or perform graph machine learning.
 
-## Direct alignment with SIH Problem Statement 26106
+The current [implementation matrix](SIH_26106_IMPLEMENTATION_4_8.md) and [idea/abstract](SIH_26106_IDEA_ABSTRACT.md) supersede older feature and validation claims.
 
-| SIH requirement | NETRA-Mail implementation | Responsible boundary |
-| --- | --- | --- |
-| AI-powered fraud detection | Explainable NLP, ML, sender/domain checks, URL analysis, and static attachment analysis | A risk score assists analysts; it is not a guarantee. |
-| Header and protocol analysis | Received-chain parsing; Return-Path, Reply-To, display-name, SPF/DKIM/DMARC-result and alignment analysis | Upstream authentication results are labelled as such; a DKIM header alone is never a PASS. |
-| Origin traceability and geolocation | Public origin-candidate extraction, IP classification, optional provider-backed GeoIP, origin infrastructure map | A network location does not prove the physical location or identity of a sender. |
-| Identity correlation | Campaign and case correlation through shared domains, IPs, URLs, and message indicators | Correlation requires analyst confirmation and is not human attribution. |
-| Dashboard and forensic reporting | Case timeline, integrity checks, campaign view, HTML/JSON/PDF reports | Evidence hashes verify integrity, not truthfulness. |
-| Privacy and evidentiary safeguards | PII masking, manual Gmail analysis, evidence hashes, versions, custody events, configurable protected deployment | Networked deployments must enable API authentication and use managed secrets. |
+## Prepare the real demonstration
 
-## Three-minute live demo
+1. Deploy backend and dashboard from the same release. Confirm the backend readiness endpoint succeeds and the dashboard shows 4.8.0. Preserve the database and encrypted evidence storage across deployments.
+2. Set the public enrichment flags in the configuration guide. Put the dashboard's analyst API credential only in its server environment. An extension submission credential cannot create cases or export analyst reports.
+3. Load NETRA in Chrome and confirm the OAuth client's extension ID matches the installed extension. Enable Gmail API, configure Gmail read-only scope and add the demonstration account as a test user if the OAuth app is in testing.
+4. Use a consented synthetic demo message in that account. Approve Google's consent prompt when selecting **Analyze current email**. An OAuth error is a failed live acceptance step, not something fixtures can verify away.
+5. Confirm the extension and dashboard use the same API origin. The badge's dashboard URL must contain the returned `email_id` and matching `api_origin`.
+6. For a campaign example, prepare two explicitly synthetic suspicious messages sharing an exact example URL or attachment hash plus a sender/content indicator. Do not use active phishing links or send unsolicited test emails. A normal bank notification should not be forced into a campaign. Cluster results must follow actual analysis evidence.
 
-### 1. Detect — 35 seconds
+## Judge walkthrough: approximately three minutes
 
-Open a suspicious invoice or credential-phishing email and select **Analyze
-current email** in the NETRA-Mail browser extension. Emphasize that analysis is
-user-initiated; opening an email alone does not transmit its contents.
+### 1. Gmail analysis: 40 seconds
 
-Show the final risk, confidence, and concise explanation: deceptive URL,
-sender/Reply-To mismatch, urgent payment language, or dangerous attachment.
+Open the selected demo email. Click **Analyze current email**. Explain that the extension retrieves only the selected original through the backend after consent; it does not silently scan the mailbox. Show the badge, then select **View forensic report** to open that investigation in the dashboard.
 
-### 2. Explain and trace — 55 seconds
+### 2. Explain the result and infrastructure: 60 seconds
 
-Open the analyst dashboard and select the analyzed email. Walk through:
+Show the reasons and distinguish model review recommendations from independently observed malicious indicators. Open **Origin trace**. Show returned country/region/city, ASN, network organisation, and their provider/lookup metadata. Say: "This is the observed mail-server infrastructure, not the person's physical address."
 
-1. Structured findings and their evidence.
-2. Relay hops and the earliest observed public origin candidate.
-3. The origin infrastructure map, ASN/provider, and VPN/proxy/Tor indicators
-   when an intelligence provider is configured.
-4. The explicit limitation: infrastructure intelligence supports investigation;
-   it does not identify a human attacker.
+Show domain registration: queried domain, registrar, creation date, expiry and calculated age. Explain that these are registration records, separate from DNS records. If a provider omits a field or is unavailable, show the truthful status; do not fill it manually. A known registrar, old domain or Google brand check is not a blanket safety guarantee.
 
-### 3. Correlate and preserve — 55 seconds
+### 3. Evidence graph: 40 seconds
 
-Link the email to a case. Show related emails or campaign relationships,
-evidence SHA-256, custody timeline, and integrity verification. Generate a PDF
-or HTML report for an incident-response or legal-review workflow.
+Open **Relationships**. Show sender, URL, attachment hash and infrastructure nodes. Open any qualifying candidate cluster and show the exact shared indicators. Explain that NetworkX bounded breadth-first traversal and connected components operate over qualified evidence edges; common ASN/registrar or VPN use alone cannot create a campaign. A single email may correctly have no candidate cluster.
 
-### 4. Close with measurable evidence — 35 seconds
+### 4. Export and verify: 40 seconds
 
-Show the current evaluation report and test result. State only measured facts:
+Expand **Export this investigation and its evidence graph**. Click **Prepare forensic PDF**, then **Download forensic PDF**. Open it and confirm the same email ID, registration/network evidence, graph edges, limitations and evidence integrity details. This action creates a case and links the preserved original; it uses the existing authenticated report API.
 
-- Scenario checks: 23/24 passed; these are functional scenarios, not final
-  population accuracy.
-- URL benchmark recall: 40.74%; therefore a low-risk URL is never presented as
-  conclusive proof of safety.
-- Current full automated suite: 37 passing tests.
+## Acceptance record — do not prefill success
 
-Finish with: **"NETRA-Mail does not merely label an email. It gives an analyst
-the evidence, context, and custody record needed to act responsibly."**
+For an actual hosted run, record the timestamp, backend/dashboard release, synthetic email ID, consent outcome, badge link, graph outcome, report ID and integrity result. Do not record mailbox tokens or passwords.
 
-## Judge questions: concise answers
+| Step | Acceptance criterion | Current evidence |
+|---|---|---|
+| Installed extension and Google consent | Real selected message returns an analysis ID | Pending live browser/account check |
+| Extension handoff contract | Returned ID and originating backend build the dashboard link | JavaScript contract tests |
+| Original analysis and preservation | API result survives storage and retrieval; original hash verifies | Synthetic integration test |
+| Dashboard and graph | Same investigation shows enriched evidence and graph nodes without rendering error | Real Streamlit AppTest against local API with provider fixtures |
+| Forensic PDF | UI export downloads a PDF containing the same investigation and evidence | Automated click, PDF text extraction and integrity check |
+| RDAP/GeoIP/RIPE/Tor | Actual public provider responses | Live public acceptance JSON |
+| Licensed WHOIS/ThreatFox | Permitted account returns usable data | Pending credentials/live verification |
 
-**Why is this more than a spam filter?** It connects detection to relay-path
-evidence, domain/IP intelligence, cases, campaign correlation, and a
-tamper-evident evidence lifecycle.
+**Automated evidence:** 333 Python tests and 7 extension contract tests passed. This is functional validation, not a new detection-accuracy benchmark. The 4.7 offline detection benchmark is documented separately and must not be described as production accuracy.
 
-**How do you prevent false confidence?** Every score is explainable; provider
-results and limits are returned in the response; source-IP geolocation and
-campaign correlation are explicitly labelled as investigative signals rather
-than identity proof.
+## If a demonstration step fails
 
-**How is privacy handled?** The extension is manual, PII is masked for
-analyst/AI-facing processing, evidence uses controlled storage, and deployments
-can require an API access key. Retention must be configured by the institution.
-
-**What is the next technical milestone?** Cryptographic DKIM verification and
-independent SPF/DMARC DNS evaluation on the original message bytes, followed by
-evaluation on a labelled, previously unseen email corpus.
-
-## Pre-demo checklist
-
-- Run `python -m pytest -q tests` and show the passing result.
-- Start the backend and dashboard before judges arrive.
-- Preload one legitimate email, one BEC/invoice email, and one attachment or
-  link-based phishing email.
-- Configure an IP-intelligence endpoint only if it is stable; the demo remains
-  honest and usable without it.
-- Never claim a final email accuracy or human-attacker attribution unless you
-  can present a valid dataset/evidence for that exact claim.
+- Missing investigation: check API-origin consistency and persistent storage, then reanalyse. Do not hide the missing-record state.
+- Consent error: check OAuth extension ID, Gmail scope and test-user registration. Do not replace consent with a hardcoded token.
+- Unknown registration/location: inspect the source status, quota and configuration. Continue showing the other evidence and label this lookup incomplete.
+- No campaign cluster: this is expected without enough qualifying evidence. Show the observed graph without claiming a campaign.
+- Report error: confirm the original evidence reference exists, the dashboard credential has analyst permission, and storage/encryption keys are available.

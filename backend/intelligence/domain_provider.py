@@ -29,7 +29,8 @@ class DomainIntelligenceProvider:
 
     @staticmethod
     def _registered(domain: str) -> str:
-        return DomainForensics._registered_domain(domain)
+        from backend.domain_identity import registered_identity
+        return registered_identity(domain) or DomainForensics._normalize_domain(domain)
 
     @staticmethod
     def _mixed_script(domain: str) -> bool:
@@ -87,6 +88,8 @@ class DomainIntelligenceProvider:
             except Exception:
                 dmarc = []
         result["dmarc"] = dmarc
+        from backend.intelligence.registration import RegistrationProvider
+        result["registration"] = RegistrationProvider().lookup(normalized)
         if "xn--" in normalized or any(ord(char) > 127 for char in normalized):
             result["findings"].append({"category": "Infrastructure", "rule": "punycode_domain", "severity": "medium", "confidence": 0.9, "title": "Punycode or internationalized domain detected", "description": "The domain uses IDN encoding that can support lookalike presentation.", "evidence": {"domain": normalized}, "limitations": ["Internationalized domains can be legitimate."]})
         if self._mixed_script(normalized):

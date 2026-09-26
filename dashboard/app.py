@@ -127,6 +127,24 @@ def render_email(email_id: str):
     for escalation in decision.get("escalations", []):
         st.warning("High-risk handling rule: " + escalation.get("reason", "Critical evidence requires review"))
 
+    with st.expander("Export this investigation and its evidence graph"):
+        evidence_id = (result.get("evidence_reference") or {}).get("evidence_id")
+        if not evidence_id:
+            st.info("Original evidence was not preserved for this record. Reanalyse the original email before exporting a case report.")
+        elif st.button("Prepare forensic PDF", key="export_" + email_id):
+            try:
+                case_key = "export_case_" + email_id
+                if case_key not in st.session_state:
+                    st.session_state[case_key] = client.create_case({"title": "Email investigation " + email_id})["case_id"]
+                case_id = st.session_state[case_key]
+                client.link_evidence(case_id, evidence_id)
+                report = client.create_report(case_id, "pdf")
+                st.session_state["export_pdf_" + email_id] = client.download_report(report["report_id"])
+                st.success("Report includes preserved evidence, registration and network observations, and graph relationships.")
+            except Exception as exc:
+                st.error("Report could not be prepared: " + str(exc))
+        if "export_pdf_" + email_id in st.session_state:
+            st.download_button("Download forensic PDF", st.session_state["export_pdf_" + email_id], file_name="netra-investigation.pdf", mime="application/pdf")
     tabs = st.tabs(["Why this result?", "Origin trace", "Relationships", "Limitations"])
     with tabs[0]:
         contributions = view.get("score_contributions", [])
@@ -246,6 +264,36 @@ def render_email(email_id: str):
             st.json({"analysis": result, "findings": findings})
     with tabs[1]:
         st.subheader("Where did this email travel from?")
+        infrastructure = view.get("infrastructure", {})
+        st.caption("Mail-server location is infrastructure evidence, not the person's location.")
+        for network in infrastructure.get("networks", []):
+            st.write("Observed server: " + str(network.get("ip")))
+            st.write("Approximate location: " + ", ".join(str(network.get(k) or "Unknown") for k in ("city", "region", "country")))
+            st.write("Network number (ASN): " + str(network.get("asn") or "Unknown") + " | Network organisation: " + str(network.get("organization") or "Unknown"))
+            st.write("Internet service provider: " + str(network.get("isp") or "Unknown") + " | Hosting provider: " + str(network.get("hosting_provider") or "Not established"))
+            if (network.get("network_enrichment") or {}).get("conflicting_fields"):
+                st.warning("The sources disagree on some network fields. Both observations are retained in the evidence details; neither is treated as certain.")
+        st.subheader("Domain registration — who registered the domain and when?")
+        for registration in infrastructure.get("registrations", []):
+            st.write(str(registration.get("domain")) + " — " + str(registration.get("status", "unknown")).replace("_", " "))
+            st.write("Registrar: " + str(registration.get("registrar") or "Not returned"))
+            age = registration.get("domain_age_days")
+            st.write("Domain age: " + (str(age) + " days" if age is not None else "Unknown — no valid registration date was returned"))
+            st.caption("Registered: " + str(registration.get("registered_at") or "Unknown") + " | Expires: " + str(registration.get("expires_at") or "Unknown"))
+            st.caption("Source: " + str(registration.get("source")) + " | Lookup: " + str(registration.get("looked_up_at")))
+        st.caption("Registration is different from live DNS records. An old domain or a known registrar does not guarantee a safe email.")
+        st.subheader("Sourced network reputation — observations for review")
+        reputation = infrastructure.get("reputation", {})
+        for observation in reputation.get("observations", []):
+            st.write(str(observation.get("indicator")) + " — " + str(observation.get("kind")).replace("_", " ") + " (" + str(observation.get("freshness")).replace("_", " ") + ")")
+            st.caption("Source: " + str(observation.get("source")) + " | Observed: " + str(observation.get("observed_at")) + " | Expires: " + str(observation.get("expires_at")))
+            st.write("This is a source observation requiring review, not proof of a malicious sender or a common attacker.")
+        if not reputation.get("observations"):
+            st.info("No sourced reputation observation was returned. This does not mean the infrastructure is safe.")
+        for lookup in reputation.get("lookups", []):
+            st.caption(str(lookup.get("source")) + ": " + str(lookup.get("status")).replace("_", " "))
+        with st.expander("Registration, network field sources and reputation evidence"):
+            st.json(infrastructure)
         if trace_error:
             st.error("The delivery-route report could not be loaded. This is a report-access problem; it does not establish whether the email contains a public IP.")
             with st.expander("Technical details for support"):
@@ -311,6 +359,13 @@ def render_email(email_id: str):
             except ImportError:
                 st.dataframe(graph.get("edges", []), use_container_width=True)
             st.caption("Relationships are investigative hypotheses; shared infrastructure does not establish human identity.")
+            st.write(graph.get("algorithm", ""))
+            clusters = graph.get("candidate_clusters", [])
+            if not clusters:
+                st.info("No candidate campaign cluster meets the evidence requirements in this bounded neighbourhood.")
+            for cluster in clusters:
+                st.write("Candidate cluster — analyst review required: " + ", ".join(cluster["email_ids"]))
+                st.json(cluster["supporting_edges"])
         if relation_error:
             st.error(relation_error)
         elif not relationships.get("relationships"):

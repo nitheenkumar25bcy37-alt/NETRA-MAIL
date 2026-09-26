@@ -104,6 +104,26 @@ class APIClient:
     def create_report(self, case_id: str, report_format: str) -> Dict[str, Any]:
         return self.post(f"/api/v2/cases/{case_id}/reports", params={"report_format": report_format})
 
+    def link_evidence(self, case_id: str, evidence_id: str):
+        return self.post(f"/api/v2/cases/{case_id}/evidence/{evidence_id}")
+
+    def download_report(self, report_id: str):
+        response = requests.get(f"{self.base_url}/api/v2/reports/{report_id}/download",
+            headers={"X-NETRA-API-Key": self.api_key} if self.api_key else {},
+            timeout=45, allow_redirects=False, stream=True)
+        try:
+            if 300 <= response.status_code < 400:
+                raise RuntimeError("Backend redirects are not permitted.")
+            response.raise_for_status()
+            payload = bytearray()
+            for chunk in response.iter_content(65536):
+                payload.extend(chunk)
+                if len(payload) > 20 * 1024 * 1024:
+                    raise RuntimeError("Report exceeds download limit.")
+            return bytes(payload)
+        finally:
+            response.close()
+
     def create_case(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         return self.post("/api/v2/cases", json=payload)
 

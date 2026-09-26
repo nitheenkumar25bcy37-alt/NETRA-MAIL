@@ -50,7 +50,7 @@ class AnalysisOrchestrator:
     - Language alone is never considered malicious.
     """
 
-    VERSION = "4.7.0"
+    VERSION = "4.8.0"
 
     def __init__(
         self,
@@ -990,8 +990,13 @@ class AnalysisOrchestrator:
         ]
 
         # ==============================================================
+        # Sourced infrastructure observations never independently raise risk.
+        # Metadata only is sent to opt-in services, never message bytes/tokens.
         # 13. EMAIL ML AS CORROBORATED SUPPORTING EVIDENCE
         # ==============================================================
+
+        from backend.intelligence.infrastructure_reputation import InfrastructureReputation
+        parsed["infrastructure_reputation"] = InfrastructureReputation().lookup(parsed)
 
         structural_warning = any(
             str(getattr(item, "severity", item.get("severity", "info") if isinstance(item, dict) else "info")).lower()

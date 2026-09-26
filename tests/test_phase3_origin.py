@@ -86,6 +86,7 @@ class Phase3OriginTests(unittest.TestCase):
 
         response = Mock(status_code=200)
         response.json.return_value = {"country": "Example", "asn": "AS1", "confidence": 0.7}
+        response.iter_content.return_value = [json.dumps(response.json.return_value).encode()]
         with patch("backend.intelligence.ip_provider.requests.get", return_value=response) as request:
             configured = IPIntelligenceProvider(endpoint="https://intel.test", cache_dir=tempfile.mkdtemp())
             first = configured.lookup("1.1.1.1")
@@ -139,6 +140,7 @@ def test_default_geo_provider_maps_network_owner_and_validates_coordinates(tmp_p
     monkeypatch.delenv("NETRA_IP_INTEL_URL", raising=False)
     response = Mock(status_code=200)
     response.json.return_value = {"ip": "8.8.8.8", "success": True, "country": "United States", "city": "Example", "latitude": 0, "longitude": 0, "connection": {"asn": 15169, "org": "Google LLC", "isp": "Google LLC"}}
+    response.iter_content.return_value = [json.dumps(response.json.return_value).encode()]
     with patch("backend.intelligence.ip_provider.requests.get", return_value=response) as request:
         provider = IPIntelligenceProvider(cache_dir=str(tmp_path))
         result = provider.lookup("8.8.8.8")
@@ -146,12 +148,13 @@ def test_default_geo_provider_maps_network_owner_and_validates_coordinates(tmp_p
         assert result["organization"] == "Google LLC" and result["asn"] == 15169
         assert result["vpn"] is None and result["source"] == "ipwho.is"
         provider.lookup("8.8.8.8")
-        request.assert_called_once_with("https://ipwho.is/8.8.8.8", timeout=3.0, allow_redirects=False)
+        request.assert_called_once_with("https://ipwho.is/8.8.8.8", timeout=3.0, allow_redirects=False, stream=True)
 
 
 def test_geo_service_failure_and_nonpublic_ips(tmp_path):
     response = Mock(status_code=200)
     response.json.return_value = {"success": False, "message": "Quota exceeded"}
+    response.iter_content.return_value = [json.dumps(response.json.return_value).encode()]
     with patch("backend.intelligence.ip_provider.requests.get", return_value=response) as request:
         provider = IPIntelligenceProvider(endpoint="https://ipwho.is", cache_dir=str(tmp_path))
         assert not provider.lookup("8.8.8.8")["available"]
@@ -163,6 +166,7 @@ def test_geo_service_failure_and_nonpublic_ips(tmp_path):
 def test_geo_invalid_coordinates_do_not_reach_map(tmp_path):
     response = Mock(status_code=200)
     response.json.return_value = {"country": "Example", "latitude": "nan", "longitude": 190}
+    response.iter_content.return_value = [json.dumps(response.json.return_value).encode()]
     with patch("backend.intelligence.ip_provider.requests.get", return_value=response):
         result = IPIntelligenceProvider(endpoint="https://ipwho.is", cache_dir=str(tmp_path)).lookup("8.8.8.8")
     assert result["available"] and not result["location_available"]

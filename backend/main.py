@@ -5197,9 +5197,9 @@ async def get_domain_intelligence_v2(domain: str, request: Request):
 
 @app.get("/api/v2/emails/{email_id}/graph")
 async def get_email_graph_v2(email_id: str):
-    from backend.services.investigation_graph import build_graph
+    from backend.services.investigation_graph import graph_from_store
     result = _get_v2_result(email_id)
-    return build_graph(result, db.get_relationships(email_id))
+    return graph_from_store(result, db)
 
 
 # ================================================================

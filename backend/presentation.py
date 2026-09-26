@@ -3,6 +3,7 @@ def _list(value):
     return [str(x)[:600] for x in value[:30] if isinstance(x, (str, int, float))] if isinstance(value, list) else []
 
 def explain_analysis(result):
+    from backend.intelligence.presentation import infrastructure_view
     parsed = result.get("parsed") or {}
     findings = result.get("findings") or []
     score = int(result.get("risk_score") or 0)
@@ -92,6 +93,7 @@ def explain_analysis(result):
         "authentication": authentication, "model": parsed.get("ml_analysis") or {},
         "content_model": parsed.get("content_model") or {},
         "origin": explain_origin(parsed.get("origin_trace") or {}),
+        "infrastructure": infrastructure_view(parsed),
         "recommended_actions": ["Avoid email links for login or OTP submission.", "Verify payment or account changes through a known phone number or official website.", "Preserve the original message and request security review."] if concerning else ["Confirm the sender and expected context before acting.", "Visit the official website directly for sensitive actions.", "Provide the original .eml for full header and attachment checks."],
         "limitations": _list(result.get("limitations")),
     }
@@ -145,6 +147,7 @@ def explanation_lines(view):
         lines.extend(["Where did this email travel from?", origin["title"], origin["summary"], origin["sender_location"], origin["next_step"]])
         for server in origin["servers"]:
             lines.extend([f"Observed server IP: {server['ip']}", server["status"], server["explanation"], server["location"], server["network"], server["anonymization"]])
+    lines.extend(["Registration, network and sourced reputation:", *view.get("infrastructure", {}).get("lines", [])])
     lines.extend(["Suggested next steps:", *view["recommended_actions"], "Assessment limitations:", *view["limitations"]])
     return lines
 

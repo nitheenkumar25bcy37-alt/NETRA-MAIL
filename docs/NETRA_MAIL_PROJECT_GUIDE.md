@@ -1,5 +1,7 @@
 # NETRA-Mail Project Guide
 
+Current 4.8 additions and verified boundaries: [implementation and configuration matrix](SIH_26106_IMPLEMENTATION_4_8.md), [updated idea and abstract](SIH_26106_IDEA_ABSTRACT.md), and [live demonstration guide](SIH_26106_FINALIST_DEMO.md). Historical benchmark numbers elsewhere in this guide retain their original test scope; they are not new deployment results.
+
 ## 1. What is NETRA-Mail?
 
 NETRA-Mail is an explainable, multilingual email-threat analysis and digital-forensics platform. It helps a user or security analyst move from a suspicious email to an investigation-ready report.

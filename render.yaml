@@ -44,6 +44,14 @@ services:
         sync: false
       - key: NETRA_URL_REPUTATION_ENABLED
         value: "false"
+      - key: NETRA_REGISTRATION_ENABLED
+        value: "true"
+      - key: NETRA_NETWORK_ENRICHMENT_ENABLED
+        value: "true"
+      - key: NETRA_TOR_ENABLED
+        value: "true"
+      - key: NETRA_THREATFOX_ENABLED
+        value: "false"
       - key: NETRA_INSPECTION_MODE
         value: portable
 

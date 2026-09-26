@@ -1,0 +1,201 @@
+{
+  "scope": "Live public-infrastructure checks only; no mailbox data submitted",
+  "checked_at": "2026-09-26T13:35:19.736001+00:00",
+  "registration": {
+    "domain": "example.com",
+    "status": "ok",
+    "source": "https://rdap.verisign.com/com/v1/domain/example.com",
+    "looked_up_at": "2026-09-26T13:35:19.736049+00:00",
+    "registrar": "RESERVED-Internet Assigned Numbers Authority",
+    "registered_at": "1995-08-14T04:00:00+00:00",
+    "expires_at": "2027-08-13T04:00:00+00:00",
+    "domain_age_days": 11366,
+    "domain_status": [
+      "client delete prohibited",
+      "client transfer prohibited",
+      "client update prohibited"
+    ],
+    "nameservers": [
+      "elliott.ns.cloudflare.com",
+      "hera.ns.cloudflare.com"
+    ],
+    "redacted": false,
+    "attempts": [
+      {
+        "source": "https://rdap.verisign.com/com/v1/domain/example.com",
+        "status": "ok"
+      }
+    ],
+    "limitations": [
+      "Registration does not establish sender identity or safe intent. Missing fields remain unknown."
+    ],
+    "retrieved_at": "2026-09-26T13:35:20.517982+00:00"
+  },
+  "network": {
+    "ip": "8.8.8.8",
+    "available": true,
+    "source": "ipwho.is",
+    "confidence": 0.5,
+    "looked_up_at": "2026-09-26T13:35:20.755492+00:00",
+    "country": "United States",
+    "region": "California",
+    "city": "San Jose",
+    "latitude": 37.3393939,
+    "longitude": -121.8949553,
+    "asn": 15169,
+    "isp": "Google LLC",
+    "organization": "Google LLC",
+    "hosting_provider": null,
+    "cloud_provider": null,
+    "vpn": null,
+    "proxy": null,
+    "tor": null,
+    "limitation": "The location represents the registered or inferred network location of the IP address. It does not prove the physical location of the sender.",
+    "ip_classification": "public",
+    "location_available": true,
+    "field_provenance": {
+      "country": [
+        {
+          "value": "United States",
+          "source": "ipwho.is",
+          "looked_up_at": "2026-09-26T13:35:20.755492+00:00",
+          "status": "observed"
+        }
+      ],
+      "region": [
+        {
+          "value": "California",
+          "source": "ipwho.is",
+          "looked_up_at": "2026-09-26T13:35:20.755492+00:00",
+          "status": "observed"
+        }
+      ],
+      "city": [
+        {
+          "value": "San Jose",
+          "source": "ipwho.is",
+          "looked_up_at": "2026-09-26T13:35:20.755492+00:00",
+          "status": "observed"
+        }
+      ],
+      "asn": [
+        {
+          "value": 15169,
+          "source": "ipwho.is",
+          "looked_up_at": "2026-09-26T13:35:20.755492+00:00",
+          "status": "observed"
+        },
+        {
+          "value": "AS15169",
+          "source": "RIPEstat prefix-overview",
+          "looked_up_at": "2026-09-26T13:35:21.307880+00:00",
+          "status": "observed",
+          "meaning": "BGP announcing network, not necessarily ISP or hosting provider"
+        }
+      ],
+      "isp": [
+        {
+          "value": "Google LLC",
+          "source": "ipwho.is",
+          "looked_up_at": "2026-09-26T13:35:20.755492+00:00",
+          "status": "observed"
+        }
+      ],
+      "organization": [
+        {
+          "value": "Google LLC",
+          "source": "ipwho.is",
+          "looked_up_at": "2026-09-26T13:35:20.755492+00:00",
+          "status": "observed"
+        },
+        {
+          "value": "GOOGLE - Google LLC",
+          "source": "RIPEstat prefix-overview",
+          "looked_up_at": "2026-09-26T13:35:21.307880+00:00",
+          "status": "observed",
+          "meaning": "BGP announcing network, not necessarily ISP or hosting provider"
+        }
+      ],
+      "hosting_provider": [
+        {
+          "value": null,
+          "source": "ipwho.is",
+          "looked_up_at": "2026-09-26T13:35:20.755492+00:00",
+          "status": "unknown"
+        }
+      ],
+      "cloud_provider": [
+        {
+          "value": null,
+          "source": "ipwho.is",
+          "looked_up_at": "2026-09-26T13:35:20.755492+00:00",
+          "status": "unknown"
+        }
+      ],
+      "vpn": [
+        {
+          "value": null,
+          "source": "ipwho.is",
+          "looked_up_at": "2026-09-26T13:35:20.755492+00:00",
+          "status": "unknown"
+        }
+      ],
+      "proxy": [
+        {
+          "value": null,
+          "source": "ipwho.is",
+          "looked_up_at": "2026-09-26T13:35:20.755492+00:00",
+          "status": "unknown"
+        }
+      ],
+      "tor": [
+        {
+          "value": null,
+          "source": "ipwho.is",
+          "looked_up_at": "2026-09-26T13:35:20.755492+00:00",
+          "status": "unknown"
+        }
+      ]
+    },
+    "network_enrichment": {
+      "source": "RIPEstat prefix-overview",
+      "status": "ok",
+      "looked_up_at": "2026-09-26T13:35:20.799349+00:00",
+      "retrieved_at": "2026-09-26T13:35:21.307880+00:00",
+      "announcing_networks": [
+        {
+          "asn": "AS15169",
+          "holder": "GOOGLE - Google LLC"
+        }
+      ],
+      "data_time": null,
+      "conflicting_fields": [
+        "organization"
+      ]
+    }
+  },
+  "tor": {
+    "checked_at": "2026-09-26T13:35:21.307972+00:00",
+    "observations": [],
+    "lookups": [
+      {
+        "source": "Tor Project exit-addresses",
+        "status": "ok"
+      },
+      {
+        "source": "ThreatFox",
+        "status": "disabled"
+      }
+    ],
+    "limitations": [
+      "No match means unknown, not safe. Feed matches require review and are not behavioural botnet detection.",
+      "VPN/Tor use, geography and shared infrastructure do not identify an attacker.",
+      "Email Date headers are sender-supplied; temporal comparisons are context, not proof."
+    ]
+  },
+  "pending": [
+    "Licensed WHOIS fallback",
+    "ThreatFox credential/account verification",
+    "Actual Gmail consent and installed extension on hosted deployment"
+  ]
+}

@@ -15,7 +15,8 @@ class CampaignService:
         source = self.db.get_v2_analysis(email_id)
         if not source:
             raise KeyError("Email analysis was not found")
-        relationships = CampaignCorrelator.correlate(email_id, source, self.db.list_v2_analyses())
+        candidates = self.db.list_v2_analyses_page(limit=200)["items"]
+        relationships = CampaignCorrelator.correlate(email_id, source, candidates)
         saved = []
         for relationship in relationships:
             ordered = dict(relationship)
@@ -24,7 +25,10 @@ class CampaignService:
             if self.db.save_relationship(ordered):
                 saved.append(ordered)
         all_relationships = self.db.get_relationships(email_id)
-        strong = [item for item in all_relationships if item.get("confidence", 0) >= 0.55]
+        from backend.services.investigation_graph import qualified
+        records = {item["email_id"]: item for item in candidates}
+        records[email_id] = source
+        strong = [item for item in all_relationships if qualified(item, records)]
         campaigns = self.db.list_campaigns()
         candidate_campaigns = []
         for campaign in campaigns:

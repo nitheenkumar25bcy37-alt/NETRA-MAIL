@@ -12,6 +12,7 @@ def test_ipstack_location_cache_and_no_secret(tmp_path, monkeypatch):
     monkeypatch.setenv("NETRA_IPSTACK_API_KEY", "test-secret")
     response = Mock(status_code=200)
     response.json.return_value = {"ip": "195.201.243.180", "country_name": "Germany", "region_name": "Bavaria", "city": "Gunzenhausen", "latitude": 49.1, "longitude": 10.7}
+    response.iter_content.return_value = [json.dumps(response.json.return_value).encode()]
     with patch("backend.intelligence.ip_provider.requests.get", return_value=response) as request:
         provider = IPIntelligenceProvider(cache_dir=str(tmp_path))
         result = provider.lookup("195.201.243.180")
@@ -31,6 +32,7 @@ def test_ipstack_errors_are_explained(tmp_path,monkeypatch,code,source):
     monkeypatch.setenv("NETRA_IPSTACK_API_KEY", "test-secret")
     response=Mock(status_code=200)
     response.json.return_value={"success":False,"error":{"code":code,"info":"untrusted secret"}}
+    response.iter_content.return_value = [json.dumps(response.json.return_value).encode()]
     with patch("backend.intelligence.ip_provider.requests.get",return_value=response):
         result=IPIntelligenceProvider(cache_dir=str(tmp_path)).lookup("8.8.8.8")
     assert result["source"]==source and not result["available"]

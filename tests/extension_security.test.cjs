@@ -120,7 +120,10 @@ test("configured Gmail consent submits selected ID to original-message endpoint"
         URL, console, AbortSignal, importScripts: () => {}
     });
     for (const name of ["connection.js", "background.js"]) vm.runInContext(fs.readFileSync(path.join(__dirname, "../extension/" + name), "utf8"), context);
-    await vm.runInContext('analyzeEmail({gmail_message_id: "18f123456789abcd"})', context);
+    const result = await vm.runInContext('analyzeEmail({gmail_message_id: "18f123456789abcd"})', context);
+    const dashboard = new URL(result.dashboard_url);
+    assert.equal(dashboard.searchParams.get("email_id"), "123e4567-e89b-42d3-a456-426614174000");
+    assert.equal(dashboard.searchParams.get("api_origin"), "https://netra-mail.onrender.com");
     assert.equal(request.url, "https://netra-mail.onrender.com/api/v2/mailbox/analyze");
     assert.deepEqual(JSON.parse(request.options.body), {provider: "gmail", message_id: "18f123456789abcd", access_token: "test-provider-token"});
     assert.equal(request.options.redirect, "error");

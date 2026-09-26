@@ -1,0 +1,24 @@
+{
+  "version": "4.8.0",
+  "recorded_at": "2026-09-26T17:00:26.602366+00:00",
+  "python": {
+    "command": "python -m pytest -q --disable-warnings",
+    "passed": 333,
+    "warnings": 12,
+    "seconds": 135.34
+  },
+  "extension": {
+    "command": "node --test tests/extension_security.test.cjs",
+    "passed": 7,
+    "failed": 0
+  },
+  "integration": "Synthetic Gmail fetch through real analysis, persisted evidence, API, Streamlit AppTest export click, PDF extraction and integrity verification; not actual Google consent",
+  "live_public_acceptance_sha256": "bb8b1b133a7add761510b9b7a31c1467777baa36527e99d370056f9ada6045b6",
+  "pending": [
+    "Licensed WHOIS credentials/live acceptance",
+    "ThreatFox credentials/live acceptance",
+    "Installed extension + Google consent + hosted dashboard acceptance"
+  ],
+  "accuracy": "Not remeasured; no improvement claimed",
+  "graph_library": "NetworkX 3.5"
+}

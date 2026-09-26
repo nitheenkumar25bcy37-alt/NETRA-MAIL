@@ -32,7 +32,10 @@ class ReportService:
         if not case:
             raise KeyError("Case was not found")
         evidence = self.db.list_evidence_for_case(case_id)
-        email_ids = case.get("email_ids", [])
+        # Evidence attached through the dashboard may not be in a legacy case's
+        # explicit email list. Include its persisted analysis in the report.
+        email_ids = list(dict.fromkeys([*case.get("email_ids", []),
+            *[item["email_id"] for item in evidence if item.get("email_id")]]))
         analyses = [self.db.get_v2_analysis(email_id) for email_id in email_ids]
         analyses = [item for item in analyses if item]
         report_id = "report_" + uuid4().hex[:12]
@@ -44,6 +47,10 @@ class ReportService:
         relationships = [relationship for email_id in email_ids for relationship in self.db.get_relationships(email_id)]
         for section in email_sections:
             section["attachment_reviews"] = self.db.list_attachment_reviews(section["email_id"])
+            from backend.services.investigation_graph import graph_from_store
+            original = next(a for a in analyses if a["email_id"] == section["email_id"])
+            section["evidence_graph"] = graph_from_store(original, self.db)
+            section["parsed"]["infrastructure_reputation"] = original.get("parsed", {}).get("infrastructure_reputation", {})
         custody = [event for item in evidence for event in self.db.get_custody(item["evidence_id"])]
         report = {
             "report_id": report_id,
@@ -84,6 +91,10 @@ class ReportService:
         for email in report["observed_evidence"].get("emails", []):
             lines.append("Email: " + str(email.get("email_id")))
             lines.extend(explanation_lines(email.get("explanation") or explain_analysis(email)))
+            graph = email.get("evidence_graph") or {}
+            lines.append("Evidence graph analysis: " + str(graph.get("algorithm", "Unavailable")))
+            lines.append("Candidate campaign clusters (require review): " + json.dumps(graph.get("candidate_clusters", []), ensure_ascii=False))
+            lines.append("Graph observations and sources: " + json.dumps(graph.get("edges", []), ensure_ascii=False))
             for review in email.get("attachment_reviews", []):
                 lines.append("Supplemental PDF review: " + review["summary"])
                 lines.append("Original attachment SHA-256: " + review["attachment_sha256"])
