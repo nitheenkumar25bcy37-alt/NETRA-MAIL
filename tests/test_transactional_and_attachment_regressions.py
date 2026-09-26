@@ -64,6 +64,8 @@ def test_explained_first_party_redirect_does_not_trigger_deception_floor():
 
 
 def test_moderate_model_probability_does_not_force_transactional_review(monkeypatch):
+    # Exercise legacy fallback; other regressions use the provisioned model.
+    monkeypatch.setenv("NETRA_CONTENT_MODEL_ENABLED", "false")
     message = EmailMessage()
     message["Subject"] = "Kindly validate your email ID in our records"
     message["From"] = "alerts@example-bank.test"

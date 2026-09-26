@@ -90,6 +90,7 @@ def explain_analysis(result):
         "url_analysis": {"urls": urls, "summary": f"{len(urls)} link(s) inspected. Link risk is separate from the overall email score." if urls else "No links were extracted from the captured content." if url_data else "Detailed URL output is unavailable in this record; this does not prove that it contains no links."},
         "attachment_analysis": {"attachments": attachments, "summary": f"{len(attachments)} attachment(s) identified." if attachments else "No MIME attachment was present in the original message received by NETRA."},
         "authentication": authentication, "model": parsed.get("ml_analysis") or {},
+        "content_model": parsed.get("content_model") or {},
         "origin": explain_origin(parsed.get("origin_trace") or {}),
         "recommended_actions": ["Avoid email links for login or OTP submission.", "Verify payment or account changes through a known phone number or official website.", "Preserve the original message and request security review."] if concerning else ["Confirm the sender and expected context before acting.", "Visit the official website directly for sensitive actions.", "Provide the original .eml for full header and attachment checks."],
         "limitations": _list(result.get("limitations")),

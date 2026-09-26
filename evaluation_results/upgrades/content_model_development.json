@@ -1,0 +1,170 @@
+{
+  "training_samples": 200,
+  "template_groups": 197,
+  "selection": {
+    "threshold": 0.55,
+    "tp": 97,
+    "tn": 97,
+    "fp": 3,
+    "fn": 3,
+    "f1": 0.97,
+    "fpr": 0.03
+  },
+  "candidate_thresholds": [
+    {
+      "threshold": 0.5,
+      "tp": 97,
+      "tn": 96,
+      "fp": 4,
+      "fn": 3,
+      "f1": 0.9651741293532339,
+      "fpr": 0.04
+    },
+    {
+      "threshold": 0.525,
+      "tp": 97,
+      "tn": 97,
+      "fp": 3,
+      "fn": 3,
+      "f1": 0.97,
+      "fpr": 0.03
+    },
+    {
+      "threshold": 0.55,
+      "tp": 97,
+      "tn": 97,
+      "fp": 3,
+      "fn": 3,
+      "f1": 0.97,
+      "fpr": 0.03
+    },
+    {
+      "threshold": 0.575,
+      "tp": 95,
+      "tn": 97,
+      "fp": 3,
+      "fn": 5,
+      "f1": 0.9595959595959596,
+      "fpr": 0.03
+    },
+    {
+      "threshold": 0.6,
+      "tp": 94,
+      "tn": 99,
+      "fp": 1,
+      "fn": 6,
+      "f1": 0.9641025641025641,
+      "fpr": 0.01
+    },
+    {
+      "threshold": 0.625,
+      "tp": 92,
+      "tn": 99,
+      "fp": 1,
+      "fn": 8,
+      "f1": 0.9533678756476683,
+      "fpr": 0.01
+    },
+    {
+      "threshold": 0.65,
+      "tp": 90,
+      "tn": 99,
+      "fp": 1,
+      "fn": 10,
+      "f1": 0.9424083769633508,
+      "fpr": 0.01
+    },
+    {
+      "threshold": 0.675,
+      "tp": 86,
+      "tn": 99,
+      "fp": 1,
+      "fn": 14,
+      "f1": 0.9197860962566845,
+      "fpr": 0.01
+    },
+    {
+      "threshold": 0.7,
+      "tp": 85,
+      "tn": 100,
+      "fp": 0,
+      "fn": 15,
+      "f1": 0.918918918918919,
+      "fpr": 0.0
+    },
+    {
+      "threshold": 0.725,
+      "tp": 80,
+      "tn": 100,
+      "fp": 0,
+      "fn": 20,
+      "f1": 0.8888888888888888,
+      "fpr": 0.0
+    },
+    {
+      "threshold": 0.75,
+      "tp": 77,
+      "tn": 100,
+      "fp": 0,
+      "fn": 23,
+      "f1": 0.8700564971751412,
+      "fpr": 0.0
+    },
+    {
+      "threshold": 0.775,
+      "tp": 75,
+      "tn": 100,
+      "fp": 0,
+      "fn": 25,
+      "f1": 0.8571428571428571,
+      "fpr": 0.0
+    },
+    {
+      "threshold": 0.8,
+      "tp": 70,
+      "tn": 100,
+      "fp": 0,
+      "fn": 30,
+      "f1": 0.8235294117647058,
+      "fpr": 0.0
+    },
+    {
+      "threshold": 0.825,
+      "tp": 67,
+      "tn": 100,
+      "fp": 0,
+      "fn": 33,
+      "f1": 0.8023952095808383,
+      "fpr": 0.0
+    },
+    {
+      "threshold": 0.85,
+      "tp": 60,
+      "tn": 100,
+      "fp": 0,
+      "fn": 40,
+      "f1": 0.75,
+      "fpr": 0.0
+    },
+    {
+      "threshold": 0.875,
+      "tp": 50,
+      "tn": 100,
+      "fp": 0,
+      "fn": 50,
+      "f1": 0.6666666666666666,
+      "fpr": 0.0
+    },
+    {
+      "threshold": 0.9,
+      "tp": 41,
+      "tn": 100,
+      "fp": 0,
+      "fn": 59,
+      "f1": 0.5815602836879432,
+      "fpr": 0.0
+    }
+  ],
+  "synthetic_context_samples": 40,
+  "scope": "Grouped out-of-fold public development results, with fixed synthetic contrasts in each training fold; not held-out performance."
+}

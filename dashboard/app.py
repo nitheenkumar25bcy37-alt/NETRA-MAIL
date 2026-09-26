@@ -229,6 +229,13 @@ def render_email(email_id: str):
                 if item["reason"]:
                     st.write(item["reason"])
         st.subheader("Email machine-learning support")
+        content_model = view.get("content_model", {})
+        if content_model.get("available"):
+            st.write("Content model: " + content_model["model"])
+            st.write("Requests review based on message content." if content_model.get("request_review") else "No review requested by the content model. Independent threat checks still apply.")
+            st.caption("Trained on " + str(content_model.get("public_training_samples", content_model["training_samples"])) + " public development emails and " + str(content_model.get("synthetic_context_samples", 0)) + " synthetic context examples. Model scores are not calibrated probabilities of harm.")
+            if content_model.get("request_review") and not content_model.get("used_in_decision"):
+                st.caption("This model signal did not change the verdict: " + str(content_model.get("review_gate", "additional evidence required")).replace("_", " ") + ".")
         model = view["model"]
         st.write("Prediction: " + str(model.get("classification", "Not reported")) if model.get("available") else "Model evidence was unavailable for this analysis.")
         st.caption("Used with corroborating evidence." if model.get("used_in_decision") else "Did not contribute to the verdict. Model output alone does not establish phishing.")

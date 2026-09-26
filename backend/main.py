@@ -3854,7 +3854,12 @@ async def readiness():
     try:
         model_path = getattr(LocalMLClassifier, "MODEL_PATH", None)
         model_ok = bool(model_path and os.path.exists(str(model_path)))
-        checks["ml_model"] = {"ok": model_ok, "available": model_ok}
+        from backend.content_model import predict as content_predict
+        content_available = content_predict("").get("available", False)
+        checks["ml_model"] = {"ok": bool(content_available or model_ok),
+                              "available": bool(content_available or model_ok),
+                              "content_model_available": content_available,
+                              "legacy_model_available": model_ok}
     except Exception as exc:
         checks["ml_model"] = {"ok": False, "error": type(exc).__name__}
 
@@ -5096,7 +5101,7 @@ async def download_report_v2(report_id: str):
 async def get_email_v2(email_id: str):
     result = _get_v2_result(email_id)
     response = {key: result[key] for key in ("email_id", "evidence", "classification", "risk_score", "confidence", "limitations")}
-    response["parsed"] = {key: result.get("parsed", {}).get(key) for key in ("verified_authentication", "reported_authentication", "ml_analysis")}
+    response["parsed"] = {key: result.get("parsed", {}).get(key) for key in ("verified_authentication", "reported_authentication", "ml_analysis", "content_model")}
     response["evidence_reference"] = result.get("evidence_reference")
     from backend.presentation import explain_analysis
     response["explanation"] = explain_analysis(result)

@@ -1,0 +1,23 @@
+{
+  "messages": 200,
+  "source_provenance": {
+    "phishing": {
+      "url": "https://monkey.org/~jose/phishing/phishing-2025",
+      "sha256": "f1fa7e0fe35c9a16f36d9aa20ade7e1d3908d1d0c1d917b8c53c8aa799ec1c8f"
+    },
+    "ham": {
+      "url": "https://spamassassin.apache.org/old/publiccorpus/20030228_easy_ham.tar.bz2",
+      "sha256": "2b7b65904bcfcc31d2b5f51946f2d261370b257402cbbd62930b46ab83367438"
+    }
+  },
+  "manifest_sha256": "d19707aa04b09c6870f3079ef18336a2b95937dbb47c83e6c2568a11d5ace9be",
+  "rejected": {
+    "hash": 88,
+    "template": 29
+  },
+  "exclusions": "All original development and test hashes, first-80-token groups, and >=0.8 Jaccard five-word-shingle similarity; also applied within the audit.",
+  "limitations": [
+    "Same source/time distributions; not an independent-source or modern bank-email benchmark.",
+    "Template exclusion is approximate, not a guarantee of semantic independence."
+  ]
+}

@@ -1,0 +1,94 @@
+{
+  "scope": "600 offline public emails; first two sets informed development, final 200 reserved until model freeze",
+  "model_sha256": "c89458fd74d61b17aaed948476340eacf1a03c369344e27e54c04f1f56ae6b45",
+  "threshold": 35,
+  "positive_definition": "Flagged for review at risk score >=35, including inconclusive cases; not confirmed malicious verdicts",
+  "splits": {
+    "reliability_before": {
+      "report_sha256": "ec925d7b42676ba146a31efb7a32760ac527544b44edb6446ff6d055ccbdc222",
+      "tp": 57,
+      "tn": 96,
+      "fp": 4,
+      "fn": 43,
+      "errors": 0,
+      "total": 200
+    },
+    "reliability_audit_before": {
+      "report_sha256": "3bc83eb83f874a3b1591bec51c1495baedbe5015ba4158129128f64413547c71",
+      "tp": 50,
+      "tn": 93,
+      "fp": 7,
+      "fn": 50,
+      "errors": 0,
+      "total": 200
+    },
+    "reliability_final_audit_before": {
+      "report_sha256": "59978a9a8a9da438285934040d001138eb1e80cd1db9ce2f59e6ccf85ececf60",
+      "tp": 53,
+      "tn": 92,
+      "fp": 8,
+      "fn": 47,
+      "errors": 0,
+      "total": 200
+    },
+    "reliability_after": {
+      "report_sha256": "aa48780887804a89ba5c056ef5997ab6e7fc31bd0cf06d7f5dabd7e0988e7cb3",
+      "tp": 96,
+      "tn": 99,
+      "fp": 1,
+      "fn": 4,
+      "errors": 0,
+      "total": 200
+    },
+    "reliability_audit_after": {
+      "report_sha256": "43dabfb13d3d47292e5836c881f604b2333c753f8601eea15f5774b9ed4b76e7",
+      "tp": 82,
+      "tn": 99,
+      "fp": 1,
+      "fn": 18,
+      "errors": 0,
+      "total": 200
+    },
+    "reliability_final_audit_after": {
+      "report_sha256": "92c30ef6608297145b4a7b02f2bf889c04042f1f8c7b9f466903c804c3a7094c",
+      "tp": 92,
+      "tn": 98,
+      "fp": 2,
+      "fn": 8,
+      "errors": 0,
+      "total": 200
+    }
+  },
+  "limitations": [
+    "Same source/time distributions: Nazario 2025 phishing versus SpamAssassin 2002 easy ham.",
+    "Hash-disjoint from public training; approximate template filtering cannot rule out all related messages.",
+    "Network intelligence and live authentication excluded; attachment inspection depends on local worker availability.",
+    "Not an independent-source, production or multilingual accuracy estimate."
+  ],
+  "before": {
+    "tp": 160,
+    "tn": 281,
+    "fp": 19,
+    "fn": 140,
+    "errors": 0,
+    "total": 600,
+    "accuracy": 0.735,
+    "precision": 0.8938547486033519,
+    "recall": 0.5333333333333333,
+    "f1": 0.6680584551148225,
+    "false_positive_rate": 0.06333333333333334
+  },
+  "after": {
+    "tp": 270,
+    "tn": 296,
+    "fp": 4,
+    "fn": 30,
+    "errors": 0,
+    "total": 600,
+    "accuracy": 0.9433333333333334,
+    "precision": 0.9854014598540146,
+    "recall": 0.9,
+    "f1": 0.9407665505226481,
+    "false_positive_rate": 0.013333333333333334
+  }
+}

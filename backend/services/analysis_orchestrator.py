@@ -50,7 +50,7 @@ class AnalysisOrchestrator:
     - Language alone is never considered malicious.
     """
 
-    VERSION = "4.6.0"
+    VERSION = "4.7.0"
 
     def __init__(
         self,
@@ -1056,7 +1056,42 @@ class AnalysisOrchestrator:
             }
 
         # ==============================================================
-        # 14. NORMALIZE FINDINGS
+        # 14. CONTENT MODEL FOR INCONCLUSIVE EMAILS
+        # A provisioned larger model supersedes legacy tiny-model votes, not
+        # authentication, URL or attachment evidence. A negative prediction
+        # never erases an independently observed threat.
+        from backend.content_model import content_text, predict as predict_content
+        content_prediction = predict_content(content_text(parsed))
+        parsed["content_model"] = content_prediction
+        if content_prediction.get("available"):
+            legacy_rules = {"calibrated_ml_review", "calibrated_ml_observation", "corroborated_email_ml"}
+            findings = [item for item in findings if (item.get("rule") if isinstance(item, dict) else item.rule) not in legacy_rules]
+            parsed["ml_analysis"]["used_in_decision"] = False
+            parsed["ml_analysis"]["superseded_by"] = "content_model"
+            # Require enough text or independent context. The trained model
+            # includes legitimate transactional contrasts, not a brand list.
+            content_context = bool(sensitive_request or structural_warning or (urgency and credentials))
+            enough_text = len(content_text(parsed).split()) >= 20
+            effective_threshold = content_prediction["threshold"]
+            content_prediction["effective_threshold"] = effective_threshold
+            content_prediction["context_corroborated"] = content_context
+            content_prediction["review_gate"] = (
+                "authenticated_without_structural_warning" if trusted_transactional_context else
+                "insufficient_text_or_context" if not content_context and not enough_text else
+                "below_contextual_threshold" if content_prediction["decision_score"] < effective_threshold else
+                "review")
+            if content_prediction["review_gate"] == "review":
+                findings.append(self._finding(
+                    "Machine learning", "content_model_review", "medium", 0.80,
+                    "Email content model requests review",
+                    "A word-and-character model trained on public email examples found attack-like content. This is a review recommendation, not confirmed phishing.",
+                    {"decision_score": content_prediction["decision_score"], "threshold": effective_threshold,
+                     "training_samples": content_prediction["training_samples"]},
+                    content_prediction["limitations"],
+                ))
+                content_prediction["used_in_decision"] = True
+
+        # NORMALIZE FINDINGS
         # ==============================================================
 
         normalized_findings = [
